@@ -1,0 +1,132 @@
+"use client";
+
+import { useState } from "react";
+import { FileText, UploadCloud, Loader2 } from "lucide-react";
+
+export default function ResumeUpload({
+    onQuestionsGenerated,
+}: {
+    onQuestionsGenerated: (questions: string[]) => void;
+}) {
+    const [file, setFile] = useState<File | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [error, setError] = useState("");
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const selected = e.target.files[0];
+            if (selected.type !== "application/pdf") {
+                setError("Please upload a PDF file.");
+                return;
+            }
+            setFile(selected);
+            setError("");
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!file) return;
+
+        setIsUploading(true);
+        setError("");
+
+        try {
+            const formData = new FormData();
+            formData.append("resume", file);
+
+            // We will create this API route next
+            const res = await fetch("/api/parse-resume", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                console.error("Server returned an error:", res.status, text);
+                let errorMsg = "Failed to process resume";
+                try {
+                    const parsed = JSON.parse(text);
+                    if (parsed.error) errorMsg = parsed.error;
+                } catch {
+                    errorMsg = `Server Error (${res.status}): ${text.substring(0, 100)}...`;
+                }
+                throw new Error(errorMsg);
+            }
+
+            const data = await res.json();
+            if (data.questions && data.questions.length > 0) {
+                onQuestionsGenerated(data.questions);
+            } else {
+                throw new Error("No questions could be generated.");
+            }
+        } catch (err: unknown) {
+            console.error(err);
+            setError(err instanceof Error ? err.message : "An error occurred.");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    return (
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md shadow-2xl relative overflow-hidden group hover:border-indigo-500/50 transition-colors">
+            <div className="flex flex-col items-center justify-center text-center">
+                {!file ? (
+                    <>
+                        <div className="w-16 h-16 rounded-full bg-indigo-500/20 flex items-center justify-center mb-6 text-indigo-400">
+                            <UploadCloud className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-2xl font-semibold text-white mb-2">Upload your Resume</h3>
+                        <p className="text-slate-400 mb-8">PDF format, max 5MB</p>
+                        <label className="relative cursor-pointer bg-white text-slate-900 px-8 py-3 rounded-full font-semibold hover:bg-indigo-50 transition-colors shadow-lg shadow-white/10">
+                            <span>Choose File</span>
+                            <input
+                                type="file"
+                                className="hidden"
+                                accept="application/pdf"
+                                onChange={handleFileChange}
+                            />
+                        </label>
+                    </>
+                ) : (
+                    <>
+                        <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-6 text-green-400">
+                            <FileText className="w-8 h-8" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-white mb-2">{file.name}</h3>
+                        <p className="text-slate-400 mb-8 text-sm">Ready to analyze</p>
+
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setFile(null)}
+                                className="px-6 py-3 rounded-full font-semibold border border-white/20 text-white hover:bg-white/10 transition-colors"
+                                disabled={isUploading}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleUpload}
+                                disabled={isUploading}
+                                className="px-8 py-3 rounded-full font-semibold bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/30 flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {isUploading ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Analyzing...
+                                    </>
+                                ) : (
+                                    "Start Interview"
+                                )}
+                            </button>
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {error && (
+                <p className="text-red-400 mt-4 text-center text-sm bg-red-400/10 py-2 rounded-lg">
+                    {error}
+                </p>
+            )}
+        </div>
+    );
+}
