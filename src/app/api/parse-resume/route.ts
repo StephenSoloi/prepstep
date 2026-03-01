@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -61,9 +61,8 @@ export async function POST(req: NextRequest) {
         // truncate resume text to avoid excessive tokens
         const resumeSnippet = extractedText.substring(0, 12000);
 
-        // 3. Initialize Gemini
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+        // 3. Initialize Groq
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
         // 4. Build the prompt
         const prompt = `You are an expert technical and behavioral interviewer for top companies.
@@ -88,12 +87,17 @@ Return ONLY a raw JSON object. No markdown, no code fences, no backticks, no exp
 RESUME:
 ${resumeSnippet}`;
 
-        // 5. Call Gemini
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        // 5. Call Groq
+        const completion = await groq.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            max_tokens: 1024,
+        });
 
+        const responseText = completion.choices[0]?.message?.content || "";
         if (!responseText) {
-            throw new Error("Gemini returned an empty response.");
+            throw new Error("AI returned an empty response.");
         }
 
         console.log("Gemini raw response:", responseText.substring(0, 500));
