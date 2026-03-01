@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
 export async function GET() {
@@ -10,13 +10,38 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const dbUser = await prisma.user.findUnique({
+        // 1. Try to find the user
+        let dbUser = await prisma.user.findUnique({
             where: { clerkId: userId },
             select: {
                 tier: true,
                 credits: true,
             },
         });
+
+        // 2. If user doesn't exist, create them (Sync from Clerk)
+        if (!dbUser) {
+            const clerkUser = await currentUser();
+            if (clerkUser) {
+                const email = clerkUser.emailAddresses[0]?.emailAddress;
+                if (email) {
+                    dbUser = await prisma.user.create({
+                        data: {
+                            clerkId: userId,
+                            email: email,
+                            firstName: clerkUser.firstName,
+                            lastName: clerkUser.lastName,
+                            tier: "FREE",
+                            credits: 2
+                        },
+                        select: {
+                            tier: true,
+                            credits: true,
+                        }
+                    });
+                }
+            }
+        }
 
         const limits: Record<string, number> = {
             FREE: 2,
