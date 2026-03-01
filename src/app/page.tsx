@@ -192,119 +192,109 @@ export default function Home() {
               </div>
 
               <div className="relative">
-                <div className={userStatus?.tier === "FREE" ? "blur-md select-none opacity-40 pointer-events-none" : ""}>
-                  <div className="bg-slate-900/50 rounded-xl sm:rounded-2xl p-5 sm:p-8 mb-6 border border-slate-800">
-                    <h3 className="text-xl font-semibold text-indigo-400 mb-4 flex items-center gap-2">
-                      <FileText className="w-6 h-6" /> Interview Summary
-                    </h3>
-                    <p className="text-slate-300 leading-relaxed text-lg">
-                      {feedback.summary}
-                    </p>
-                  </div>
 
-                  {/* Q&A Breakdown */}
-                  {feedback.qaBreakdown && feedback.qaBreakdown.length > 0 && (
-                    <div className="bg-slate-900/50 rounded-2xl p-6 md:p-8 mb-6 border border-slate-800">
-                      <h3 className="text-xl font-semibold text-violet-400 mb-6 flex items-center gap-2">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="w-6 h-6"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z"
-                          />
-                        </svg>
-                        Question-by-Question Breakdown
-                      </h3>
-                      <div className="space-y-6">
-                        {feedback.qaBreakdown.map((item: any, idx: number) => (
-                          <div
-                            key={idx}
-                            className="border border-slate-700 rounded-xl overflow-hidden flex flex-col"
-                          >
-                            <div className="bg-indigo-600/10 border-b border-slate-700 px-4 sm:px-5 py-3">
-                              <p className="text-indigo-300 font-semibold text-xs sm:text-sm uppercase tracking-wide mb-1">
-                                Question {idx + 1}
-                              </p>
-                              <p className="text-white font-medium text-sm sm:text-base leading-snug">
-                                {item.question}
-                              </p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-700">
-                              <div className="p-4 sm:p-5">
-                                <p className="text-amber-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-2">
-                                  Your Answer
-                                </p>
-                                <p className="text-slate-300 text-sm leading-relaxed">
-                                  {item.candidateAnswer}
-                                </p>
-                              </div>
-                              <div className="p-4 sm:p-5 bg-teal-500/5">
-                                <p className="text-teal-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-2">
-                                  Suggested Better Answer
-                                </p>
-                                <p className="text-slate-300 text-sm leading-relaxed">
-                                  {item.suggestedAnswer}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="bg-slate-900/50 rounded-xl sm:rounded-2xl p-5 sm:p-8 border border-slate-800">
-                    <h3 className="text-xl font-semibold text-teal-400 mb-6 flex items-center gap-2">
-                      <TrendingUp className="w-6 h-6" /> Areas for Improvement
-                    </h3>
-                    <ul className="space-y-4">
-                      {feedback.improvingPoints.map(
-                        (point: string, idx: number) => (
-                          <li key={idx} className="flex items-start gap-4">
-                            <div className="w-8 h-8 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0 mt-0.5 text-sm font-bold">
-                              {idx + 1}
-                            </div>
-                            <span className="text-slate-300 text-lg leading-relaxed">
-                              {point}
-                            </span>
-                          </li>
-                        ),
-                      )}
-                    </ul>
-                  </div>
+                {/* Always show Summary — blurred for free */}
+                <div className={`bg-slate-900/50 rounded-xl sm:rounded-2xl p-5 sm:p-8 mb-6 border border-slate-800 ${userStatus?.tier === "FREE" ? "blur-sm select-none pointer-events-none opacity-50" : ""}`}>
+                  <h3 className="text-xl font-semibold text-indigo-400 mb-4 flex items-center gap-2">
+                    <FileText className="w-6 h-6" /> Interview Summary
+                  </h3>
+                  <p className="text-slate-300 leading-relaxed text-lg">
+                    {feedback.summary}
+                  </p>
                 </div>
 
-                {/* Paywall Overlay for FREE tier */}
-                {userStatus?.tier === "FREE" && (
-                  <div className="absolute inset-x-0 -bottom-8 -top-8 flex flex-col items-center justify-center text-center z-20">
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/20 to-slate-950 pointer-events-none" />
-                    <div className="relative bg-slate-900/60 backdrop-blur-xl rounded-2xl p-6 sm:p-10 border border-white/10 max-w-lg mx-4 shadow-2xl">
-                      <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mb-6 mx-auto">
-                        <Lock className="w-8 h-8 text-indigo-400" />
+                {/* For PRO users: show full Q&A breakdown + improvements */}
+                {userStatus?.tier !== "FREE" && (
+                  <>
+                    {feedback.qaBreakdown && feedback.qaBreakdown.length > 0 && (
+                      <div className="bg-slate-900/50 rounded-2xl p-6 md:p-8 mb-6 border border-slate-800">
+                        <h3 className="text-xl font-semibold text-violet-400 mb-6 flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4z" />
+                          </svg>
+                          Question-by-Question Breakdown
+                        </h3>
+                        <div className="space-y-6">
+                          {feedback.qaBreakdown.map((item: any, idx: number) => (
+                            <div key={idx} className="border border-slate-700 rounded-xl overflow-hidden flex flex-col">
+                              <div className="bg-indigo-600/10 border-b border-slate-700 px-4 sm:px-5 py-3">
+                                <p className="text-indigo-300 font-semibold text-xs sm:text-sm uppercase tracking-wide mb-1">Question {idx + 1}</p>
+                                <p className="text-white font-medium text-sm sm:text-base leading-snug">{item.question}</p>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-700">
+                                <div className="p-4 sm:p-5">
+                                  <p className="text-amber-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-2">Your Answer</p>
+                                  <p className="text-slate-300 text-sm leading-relaxed">{item.candidateAnswer}</p>
+                                </div>
+                                <div className="p-4 sm:p-5 bg-teal-500/5">
+                                  <p className="text-teal-400 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-2">Suggested Better Answer</p>
+                                  <p className="text-slate-300 text-sm leading-relaxed">{item.suggestedAnswer}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                    )}
+
+                    <div className="bg-slate-900/50 rounded-xl sm:rounded-2xl p-5 sm:p-8 border border-slate-800">
+                      <h3 className="text-xl font-semibold text-teal-400 mb-6 flex items-center gap-2">
+                        <TrendingUp className="w-6 h-6" /> Areas for Improvement
+                      </h3>
+                      <ul className="space-y-4">
+                        {feedback.improvingPoints.map((point: string, idx: number) => (
+                          <li key={idx} className="flex items-start gap-4">
+                            <div className="w-8 h-8 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0 mt-0.5 text-sm font-bold">{idx + 1}</div>
+                            <span className="text-slate-300 text-lg leading-relaxed">{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                )}
+
+                {/* For FREE users: show first Q&A card blurred, with paywall overlay on top */}
+                {userStatus?.tier === "FREE" && feedback.qaBreakdown && feedback.qaBreakdown.length > 0 && (
+                  <div className="relative mt-2">
+                    {/* Blurred first card */}
+                    <div className="blur-sm select-none pointer-events-none opacity-50 border border-slate-700 rounded-xl overflow-hidden">
+                      <div className="bg-indigo-600/10 border-b border-slate-700 px-4 sm:px-5 py-3">
+                        <p className="text-indigo-300 font-semibold text-xs uppercase tracking-wide mb-1">Question 1</p>
+                        <p className="text-white font-medium text-sm leading-snug">{feedback.qaBreakdown[0].question}</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-700">
+                        <div className="p-4 sm:p-5">
+                          <p className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-2">Your Answer</p>
+                          <p className="text-slate-300 text-sm leading-relaxed">{feedback.qaBreakdown[0].candidateAnswer}</p>
+                        </div>
+                        <div className="p-4 sm:p-5 bg-teal-500/5">
+                          <p className="text-teal-400 text-xs font-bold uppercase tracking-widest mb-2">Suggested Better Answer</p>
+                          <p className="text-slate-300 text-sm leading-relaxed">{feedback.qaBreakdown[0].suggestedAnswer}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Upgrade CTA overlay */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20 rounded-xl bg-slate-950/60 backdrop-blur-md p-6">
+                      <div className="w-14 h-14 bg-indigo-500/20 rounded-full flex items-center justify-center mb-4 mx-auto">
+                        <Lock className="w-7 h-7 text-indigo-400" />
+                      </div>
+                      <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
                         Upgrade to View Insights
                       </h2>
-                      <p className="text-slate-400 mb-8 text-sm sm:text-base leading-relaxed">
-                        Unlock detailed AI summaries, question breakdowns, and personalized feedback analysis to excel in your next interview.
+                      <p className="text-slate-400 mb-6 text-sm leading-relaxed max-w-xs mx-auto">
+                        Unlock your full Q&amp;A breakdown, suggested answers, and personalized improvement tips.
                       </p>
-                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center w-full max-w-xs mx-auto">
                         <Link
                           href="/pricing"
-                          className="px-8 py-3 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30"
+                          className="px-6 py-3 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 text-sm"
                         >
                           Upgrade to Pro — $8
                         </Link>
                         <button
                           onClick={() => setFeedback(null)}
-                          className="px-8 py-3 rounded-full font-bold bg-white/5 text-white hover:bg-white/10 transition-all border border-white/10"
+                          className="px-6 py-3 rounded-full font-bold bg-white/5 text-white hover:bg-white/10 transition-all border border-white/10 text-sm"
                         >
                           Take Another Test
                         </button>
@@ -312,7 +302,9 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+
               </div>
+
 
               <div className="mt-12 flex justify-center">
                 <button
