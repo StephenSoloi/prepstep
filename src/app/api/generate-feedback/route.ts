@@ -127,6 +127,15 @@ ${transcriptText.substring(0, 30000)}`;
 
     } catch (error: any) {
         console.error("Feedback Generation Error:", error);
+
+        // Handle Gemini Quota/Rate Limit Errors
+        if (error.message?.includes("RESOURCE_EXHAUSTED") || error.status === "RESOURCE_EXHAUSTED" || error.code === 429) {
+            return NextResponse.json(
+                { error: "AI service is currently busy (Rate Limit reached). Please wait 60 seconds and try again." },
+                { status: 429 }
+            );
+        }
+
         return NextResponse.json({ error: error.message || "Something went wrong" }, { status: 500 });
     }
 }

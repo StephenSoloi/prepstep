@@ -151,8 +151,17 @@ ${resumeSnippet}`;
             { status: 200 }
         );
 
-    } catch (error: unknown) {
+    } catch (error: any) {
         console.error("API Route Error:", error);
+
+        // Handle Gemini Quota/Rate Limit Errors
+        if (error.message?.includes("RESOURCE_EXHAUSTED") || error.status === "RESOURCE_EXHAUSTED") {
+            return NextResponse.json(
+                { error: "AI service is currently busy (Rate Limit reached). Please wait 60 seconds and try again." },
+                { status: 429 }
+            );
+        }
+
         return NextResponse.json(
             { error: error instanceof Error ? error.message : "Internal Server Error" },
             { status: 500 }
