@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
@@ -16,7 +16,8 @@ export async function POST(req: NextRequest) {
 
         const transcriptText = transcript.map((t: any) => `${t.role.toUpperCase()}: ${t.text}`).join("\n");
 
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `You are an expert technical and behavioral interview coach.
 Please carefully review the following interview transcript.
@@ -43,12 +44,9 @@ For the qaBreakdown array:
 TRANSCRIPT:
 ${transcriptText.substring(0, 30000)}`;
 
-        const response = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
-            contents: prompt,
-        });
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
 
-        const responseText = response.text;
         if (!responseText) {
             throw new Error("No response from AI.");
         }

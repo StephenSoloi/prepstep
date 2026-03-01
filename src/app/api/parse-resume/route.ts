@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -58,13 +58,14 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Truncate resume text to avoid excessive tokens
+        // truncate resume text to avoid excessive tokens
         const resumeSnippet = extractedText.substring(0, 12000);
 
         // 3. Initialize Gemini
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        // 4. Build the prompt — NO inline JS comments inside template literal
+        // 4. Build the prompt
         const prompt = `You are an expert technical and behavioral interviewer for top companies.
 
 Job Context:
@@ -88,12 +89,9 @@ RESUME:
 ${resumeSnippet}`;
 
         // 5. Call Gemini
-        const response = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
-            contents: prompt,
-        });
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
 
-        const responseText = response.text;
         if (!responseText) {
             throw new Error("Gemini returned an empty response.");
         }
