@@ -82,21 +82,38 @@ ${transcriptText.substring(0, 30000)}`;
                 if (user) {
                     const email = user.emailAddresses[0]?.emailAddress || `${userId}@placeholder.com`;
 
-                    // Upsert user into our DB
-                    const dbUser = await prisma.user.upsert({
-                        where: { clerkId: userId },
-                        update: {
-                            email: email,
-                            firstName: user.firstName,
-                            lastName: user.lastName,
-                        },
-                        create: {
-                            clerkId: userId,
-                            email: email,
-                            firstName: user.firstName,
-                            lastName: user.lastName,
+                    // Robust Sync Logic: Find by Clerk ID first, then by Email
+                    let dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+
+                    if (!dbUser) {
+                        // User not found by clerkId, check for existing by Email
+                        const existingByEmail = await prisma.user.findUnique({ where: { email } });
+                        if (existingByEmail) {
+                            // Link existing record to this Clerk ID
+                            dbUser = await prisma.user.update({
+                                where: { id: existingByEmail.id },
+                                data: { clerkId: userId, firstName: user.firstName, lastName: user.lastName }
+                            });
+                        } else {
+                            // Create new
+                            dbUser = await prisma.user.create({
+                                data: {
+                                    clerkId: userId,
+                                    email: email,
+                                    firstName: user.firstName,
+                                    lastName: user.lastName,
+                                    tier: "FREE",
+                                    credits: 2
+                                }
+                            });
                         }
-                    });
+                    } else {
+                        // Update existing Clerk user just in case name/email changed
+                        dbUser = await prisma.user.update({
+                            where: { id: dbUser.id },
+                            data: { email: email, firstName: user.firstName, lastName: user.lastName }
+                        });
+                    }
 
                     // Save the completed interview session
                     await prisma.$transaction([

@@ -19,26 +19,39 @@ export async function GET() {
             },
         });
 
-        // 2. If user doesn't exist, create them (Sync from Clerk)
+        // 2. If user doesn't exist by Clerk ID, try finding by Email or Create them
         if (!dbUser) {
             const clerkUser = await currentUser();
             if (clerkUser) {
                 const email = clerkUser.emailAddresses[0]?.emailAddress;
                 if (email) {
-                    dbUser = await prisma.user.create({
-                        data: {
-                            clerkId: userId,
-                            email: email,
-                            firstName: clerkUser.firstName,
-                            lastName: clerkUser.lastName,
-                            tier: "FREE",
-                            credits: 2
-                        },
-                        select: {
-                            tier: true,
-                            credits: true,
-                        }
+                    // Use upsert by CLERK_ID but handle email conflict manually
+                    // or just find by email first
+                    const existingByEmail = await prisma.user.findUnique({
+                        where: { email }
                     });
+
+                    if (existingByEmail) {
+                        // Link the existing email record to this new Clerk ID
+                        dbUser = await prisma.user.update({
+                            where: { id: existingByEmail.id },
+                            data: { clerkId: userId },
+                            select: { tier: true, credits: true }
+                        });
+                    } else {
+                        // Create brand new user
+                        dbUser = await prisma.user.create({
+                            data: {
+                                clerkId: userId,
+                                email: email,
+                                firstName: clerkUser.firstName,
+                                lastName: clerkUser.lastName,
+                                tier: "FREE",
+                                credits: 2
+                            },
+                            select: { tier: true, credits: true }
+                        });
+                    }
                 }
             }
         }
