@@ -43,7 +43,7 @@ export default function Home() {
     if (typeof window === "undefined") return;
 
     try {
-      const res = await fetch("/api/user/status");
+      const res = await fetch("/api/user/status", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setUserStatus(data);
