@@ -138,7 +138,7 @@ ${questionsBlock}`;
                 firstMessage,
                 model: {
                     provider: "openai",
-                    model: "gpt-4.1",
+                    model: "gpt-4o-mini",
                     messages: [{ role: "system", content: systemContext }],
                 },
             });
