@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
         const resumeSnippet = extractedText.substring(0, 12000);
 
         // 3. Initialize Gemini
-        const ai = new GoogleGenAI({});
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
         // 4. Build the prompt — NO inline JS comments inside template literal
         const prompt = `You are an expert technical and behavioral interviewer for top companies.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic,
@@ -11,12 +11,13 @@ import {
   TrendingUp,
   Loader2,
 } from "lucide-react";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignInButton, SignedIn, SignedOut, UserButton, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import ResumeUpload from "@/components/ResumeUpload";
 import InterviewSession from "@/components/InterviewSession";
 
 export default function Home() {
+  const { isSignedIn } = useAuth();
   const [questions, setQuestions] = useState<string[]>([]);
   const [applicantName, setApplicantName] = useState<string>("");
   const [companyName, setCompanyName] = useState<string>("");
@@ -48,9 +49,9 @@ export default function Home() {
     }
   };
 
-  useState(() => {
+  useEffect(() => {
     fetchUserStatus();
-  });
+  }, [isSignedIn]); // Refresh when sign-in state changes
 
   const handleInterviewEnd = async (
     transcript: { role: string; text: string }[],

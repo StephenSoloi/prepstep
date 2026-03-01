@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
         const transcriptText = transcript.map((t: any) => `${t.role.toUpperCase()}: ${t.text}`).join("\n");
 
-        const ai = new GoogleGenAI({});
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
         const prompt = `You are an expert technical and behavioral interview coach.
 Please carefully review the following interview transcript.
