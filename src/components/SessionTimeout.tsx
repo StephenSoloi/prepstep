@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useRef } from "react";
 import { useClerk, useAuth } from "@clerk/nextjs";
 
-const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes in milliseconds
+const INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 export default function SessionTimeout() {
     const { signOut } = useClerk();
