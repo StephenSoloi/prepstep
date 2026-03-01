@@ -40,10 +40,10 @@ export default function Home() {
 
   const fetchUserStatus = async () => {
     // DO NOT run fetch during build/SSR as there is no base URL
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !window.location) return;
 
     try {
-      const res = await fetch("/api/user/status", { cache: "no-store" });
+      const res = await fetch(`${window.location.origin}/api/user/status`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setUserStatus(data);
