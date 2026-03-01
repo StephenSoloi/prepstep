@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
         const transcriptText = transcript.map((t: any) => `${t.role.toUpperCase()}: ${t.text}`).join("\n");
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
         const prompt = `You are an expert technical and behavioral interview coach.
 Please carefully review the following interview transcript.
