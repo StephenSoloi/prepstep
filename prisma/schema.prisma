@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid()) // Our internal ID
+  clerkId   String   @unique              // From Clerk authentication
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  tier      String   @default("FREE")     // FREE, PREMIUM
+  credits   Int      @default(2)          // Free trial interviews
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  interviews   InterviewSession[]
+  transactions Transaction[]
+}
+
+model InterviewSession {
+  id              String   @id @default(cuid())
+  userId          String
+  companyName     String
+  positionApplied String
+  resumeText      String   @db.Text
+  questionsGen    Json     // Array of questions generated
+  transcript      Json     // Array of objects {role, text}
+  feedback        Json     // Final generated feedback JSON
+  isPublic        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id                String   @id @default(cuid())
+  userId            String
+  amount            Float
+  phoneNumber       String
+  mpesaReceipt      String?  @unique
+  status            String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  checkoutRequestId String   @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

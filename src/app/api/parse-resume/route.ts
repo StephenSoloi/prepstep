@@ -1,25 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { auth } from "@clerk/nextjs/server";
+import prisma from "@/lib/prisma";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require("pdf-parse/lib/pdf-parse.js");
 
-// We force the standard Node.js runtime because pdf-parse needs native node modules (fs, etc).
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
         const file = formData.get("resume") as File;
+        const companyName = formData.get("companyName") as string || "Not specified";
+        const companyDescription = formData.get("companyDescription") as string || "Not specified";
+        const positionApplied = formData.get("positionApplied") as string || "Not specified";
 
         if (!file) {
             return NextResponse.json({ error: "No file provided" }, { status: 400 });
         }
 
-        // 1. Convert the uploaded file to a Node Buffer
+        // --- Credit Check ---
+        const { userId } = await auth();
+        if (userId) {
+            const dbUser = await prisma.user.findUnique({
+                where: { clerkId: userId }
+            });
+
+            if (dbUser && dbUser.credits <= 0) {
+                return NextResponse.json(
+                    { error: `You have used all your ${dbUser.tier === 'PREMIUM' ? 'Pro' : 'free'} interview credits. Please upgrade or contact support to continue.` },
+                    { status: 403 }
+                );
+            }
+        }
+
+        // 1. Convert PDF to buffer
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        // 2. Extract text from the PDF using pdf-parse
+        // 2. Extract text from PDF
         let extractedText = "";
         try {
             const data = await pdfParse(buffer);
@@ -39,30 +58,36 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 3. Initialize Gemini SDK
-        // The SDK automatically picks up GEMINI_API_KEY from the environment
+        // Truncate resume text to avoid excessive tokens
+        const resumeSnippet = extractedText.substring(0, 12000);
+
+        // 3. Initialize Gemini
         const ai = new GoogleGenAI({});
 
-        // 4. Create the strict prompt to get ONLY a JSON array
-        const prompt = `
-      You are an expert technical and behavioral interviewer for top technology companies.
-      I am going to provide you with a candidate's resume text.
+        // 4. Build the prompt — NO inline JS comments inside template literal
+        const prompt = `You are an expert technical and behavioral interviewer for top companies.
 
-      Analyze their experience, education, and skills. Then, generate exactly 5 highly relevant, 
-      challenging interview questions tailored to their background. Do not ask generic questions like 
-      "Tell me about yourself". Ask about specific projects or technologies listed on their resume.
+Job Context:
+- Company: ${companyName}
+- Position Applied For: ${positionApplied}
+- Company Description: ${companyDescription}
 
-      CRITICAL INSTRUCTION: Return ONLY a valid JSON array of strings. Do not include markdown blocks, 
-      explanations, or polite text. Just the raw array.
+Carefully read the candidate's resume below. Extract their full name. Then generate exactly 4 highly relevant interview questions tailored to their background and this specific role.
 
-      Example output format:
-      ["Question 1?", "Question 2?", "Question 3?", "Question 4?", "Question 5?"]
+QUESTION REQUIREMENTS:
+1. First question MUST be "Tell us about yourself." — this is standard in every real interview.
+2. Include at least one question about how they will contribute to ${companyName} as a ${positionApplied}.
+3. Include at least one scenario/behavioral question (e.g. how they handle a specific challenge relevant to the role).
+4. Make all questions specific to the candidate's actual experience — reference their schools, jobs, or skills where appropriate.
 
-      RESUME TEXT:
-      ${extractedText.substring(0, 15000)} // truncate to avoid token limits if the resume is ridiculously long
-    `;
+OUTPUT FORMAT — CRITICAL:
+Return ONLY a raw JSON object. No markdown, no code fences, no backticks, no explanation text. Just the JSON:
+{"name":"Actual Candidate Name","questions":["Tell us about yourself.","Question 2?","Question 3?","Question 4?"]}
 
-        // 5. Call Gemini API (using gemini-2.5-flash as the fast default model from @google/genai)
+RESUME:
+${resumeSnippet}`;
+
+        // 5. Call Gemini
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
@@ -73,32 +98,64 @@ export async function POST(req: NextRequest) {
             throw new Error("Gemini returned an empty response.");
         }
 
-        // 6. Clean and parse the response
-        let questionsArray: string[] = [];
-        try {
-            // Find the start of the JSON array (in case Gemini still included markdown)
-            const startIdx = responseText.indexOf("[");
-            const endIdx = responseText.lastIndexOf("]");
+        console.log("Gemini raw response:", responseText.substring(0, 500));
 
-            if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-                const jsonStr = responseText.substring(startIdx, endIdx + 1);
-                questionsArray = JSON.parse(jsonStr);
+        // 6. Robust JSON extraction — strips markdown fences if present, then parses
+        let questionsArray: string[] = [];
+        let candidateName = "Candidate";
+
+        try {
+            // Strip common markdown code fences Gemini sometimes wraps around JSON
+            let cleaned = responseText.trim();
+            cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+
+            // Find the outermost JSON object
+            const startIdx = cleaned.indexOf("{");
+            const endIdx = cleaned.lastIndexOf("}");
+
+            if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
+                console.error("No JSON object found in Gemini response. Raw:", responseText);
+                throw new Error("No JSON object found in response");
+            }
+
+            const jsonStr = cleaned.substring(startIdx, endIdx + 1);
+            const parsed = JSON.parse(jsonStr);
+
+            if (parsed.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+                questionsArray = parsed.questions.filter((q: unknown) => typeof q === "string" && q.trim().length > 0);
             } else {
-                // Fallback parsing if it didn't use an array
-                questionsArray = responseText.split("\n").filter(line => line.trim().length > 10).slice(0, 5);
+                throw new Error("Parsed JSON has no valid questions array");
+            }
+
+            if (parsed.name && typeof parsed.name === "string") {
+                candidateName = parsed.name.trim();
             }
         } catch (jsonError) {
-            console.error("JSON Parsing Error from Gemini:", jsonError);
+            console.error("JSON Parsing Error:", jsonError);
+            console.error("Full Gemini response:", responseText);
             return NextResponse.json(
-                { error: "Failed to format questions from AI. Please try again." },
+                { error: "The AI returned an unexpected format. Please try again." },
                 { status: 500 }
             );
         }
 
-        return NextResponse.json({ questions: questionsArray }, { status: 200 });
+        if (questionsArray.length === 0) {
+            return NextResponse.json(
+                { error: "No questions could be generated from this resume. Please try again." },
+                { status: 500 }
+            );
+        }
+
+        return NextResponse.json(
+            { questions: questionsArray, name: candidateName, resumeText: extractedText.trim() },
+            { status: 200 }
+        );
 
     } catch (error: unknown) {
         console.error("API Route Error:", error);
-        return NextResponse.json({ error: error instanceof Error ? error.message : "Internal Server Error" }, { status: 500 });
+        return NextResponse.json(
+            { error: error instanceof Error ? error.message : "Internal Server Error" },
+            { status: 500 }
+        );
     }
 }
