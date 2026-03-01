@@ -105,14 +105,7 @@ export default function Home() {
             PrepStep
           </div>
           <div className="flex items-center gap-6">
-            <a
-              href="https://github.com/vapi-ai"
-              target="_blank"
-              rel="noreferrer"
-              className="hidden sm:block text-sm font-medium text-slate-400 hover:text-white transition-colors"
-            >
-              Powered by Vapi + Gemini
-            </a>
+
 
             <SignedOut>
               <SignInButton mode="modal">
@@ -345,7 +338,7 @@ export default function Home() {
               </div>
 
               <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-4 sm:mb-6 leading-[1.1] sm:leading-tight px-2">
-                Nail your next interview <br className="hidden sm:block" />
+                🔨 Nail your next interview <br className="hidden sm:block" />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-blue-400 to-teal-400">
                   with pure confidence.
                 </span>
