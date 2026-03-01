@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.0",
-    "@google/genai": "^1.43.0",
     "@google/generative-ai": "^0.24.1",
     "@vapi-ai/web": "^2.5.2",
     "date-fns": "^4.1.0",
