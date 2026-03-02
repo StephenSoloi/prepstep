@@ -190,7 +190,7 @@ export default function PricingPage() {
               <div className="flex flex-col gap-3">
                 <input
                   type="text"
-                  placeholder="e.g. 2547XXXXXXXX"
+                  placeholder="e.g. 07XXXXXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all font-mono"

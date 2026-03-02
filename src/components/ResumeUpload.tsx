@@ -29,7 +29,15 @@ export default function ResumeUpload({
     };
 
     const handleUpload = async () => {
-        if (!file) return;
+        if (!file) {
+            alert("Please upload a resume first.");
+            return;
+        }
+
+        if (!applicantName || !companyName || !positionApplied || !companyDescription) {
+            alert("Please fill in all the details (Name, Company, Position and Description) before starting the interview.");
+            return;
+        }
 
         setIsUploading(true);
         setError("");
@@ -105,19 +113,19 @@ export default function ResumeUpload({
                         <div className="w-full max-w-sm flex flex-col gap-4 text-left mb-8">
                             <div>
                                 <label className="block text-sm text-slate-400 mb-1">Your First Name</label>
-                                <input type="text" value={applicantName} onChange={(e) => setApplicantName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" placeholder="e.g. Stephen" required />
+                                <input type="text" value={applicantName} onChange={(e) => setApplicantName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" placeholder="e.g. John/Jane" required />
                             </div>
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Company / Institution Name</label>
-                                <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" placeholder="e.g. IEBC" required />
+                                <label className="block text-sm text-slate-400 mb-1">Company/Institution Applying To</label>
+                                <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" placeholder="e.g. IEBC/UN" required />
                             </div>
                             <div>
                                 <label className="block text-sm text-slate-400 mb-1">Position Applied For</label>
                                 <input type="text" value={positionApplied} onChange={(e) => setPositionApplied(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" placeholder="e.g. IT Professional" required />
                             </div>
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Brief Description / Processes</label>
-                                <textarea value={companyDescription} onChange={(e) => setCompanyDescription(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 h-24 resize-none" placeholder="Describe the company processes or role details..." required />
+                                <label className="block text-sm text-slate-400 mb-1">Brief description of the job roles/role applying for</label>
+                                <textarea value={companyDescription} onChange={(e) => setCompanyDescription(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 h-24 resize-none" placeholder="e.g. Set-up, configure and operate ICT equipments....." required />
                             </div>
                         </div>
 
