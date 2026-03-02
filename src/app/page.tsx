@@ -505,7 +505,7 @@ export default function Home() {
                             <ul className="space-y-3 mb-8 flex-1">
                               {[
                                 "Unlimited voice interviews",
-                                "Performance Analytics & Progress Trends",
+                                "Performance & Progress Analytics",
                                 "Full Q&A breakdown report",
                                 "Suggested ideal answers",
                                 "Areas for improvement analysis",

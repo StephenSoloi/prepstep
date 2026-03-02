@@ -113,6 +113,12 @@ export default async function DashboardPage() {
 
               <div className="pt-6 border-t border-slate-800/50 space-y-3">
                 <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-400">Interviews Left</span>
+                  <span className={`font-bold ${(user?.tier === "PREMIUM" ? 5 : 2) - interviews.length <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {Math.max(0, (user?.tier === "PREMIUM" ? 5 : 2) - interviews.length)} / {user?.tier === "PREMIUM" ? 5 : 2}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-400">Account Tier</span>
                   <span className={`font-bold px-2 py-0.5 rounded text-[10px] uppercase tracking-wider ${user?.tier === 'PREMIUM' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-700 text-slate-300'}`}>
                     {user?.tier || 'FREE'}
@@ -122,12 +128,6 @@ export default async function DashboardPage() {
                   <span className="text-slate-400">Total Interviews</span>
                   <span className="font-bold text-white">
                     {interviews.length}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Interviews Left</span>
-                  <span className={`font-bold ${(user?.tier === "PREMIUM" ? 5 : 2) - interviews.length <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                    {Math.max(0, (user?.tier === "PREMIUM" ? 5 : 2) - interviews.length)} / {user?.tier === "PREMIUM" ? 5 : 2}
                   </span>
                 </div>
               </div>
@@ -144,15 +144,15 @@ export default async function DashboardPage() {
 
           {/* Right Main Panel (Interview History) */}
           <div className="lg:col-span-9 flex flex-col">
+            {/* Progress Analytics Section */}
+            <ProgressTracker interviews={interviews} isPremium={user?.tier === "PREMIUM"} />
+
             <div className="flex items-center gap-3 mb-8">
               <LayoutDashboard className="w-7 h-7 text-teal-400" />
               <h2 className="text-2xl font-bold text-white">
                 Your Interview History
               </h2>
             </div>
-
-            {/* Progress Analytics Section */}
-            <ProgressTracker interviews={interviews} isPremium={user?.tier === "PREMIUM"} />
 
             {/* Existing History Grid */}
             {interviews.length === 0 ? (
