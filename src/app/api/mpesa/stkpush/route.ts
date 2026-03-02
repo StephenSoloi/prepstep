@@ -10,18 +10,23 @@ async function fetchWithRetry(
     let lastError: unknown;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
+            console.log(`[M-Pesa] Fetching ${url} (Attempt ${attempt}/${maxAttempts})...`);
             const res = await fetch(url, options);
-            // Retry only on server-side / network errors (5xx); surface 4xx immediately
+            console.log(`[M-Pesa] ${url} responded with ${res.status}`);
             if (res.status < 500) return res;
             const body = await res.text();
-            console.warn(`Attempt ${attempt} got ${res.status}:`, body.substring(0, 200));
+            console.warn(`[M-Pesa] Attempt ${attempt} got ${res.status}:`, body.substring(0, 200));
             lastError = new Error(`HTTP ${res.status}: ${body.substring(0, 200)}`);
-        } catch (err) {
+        } catch (err: any) {
             lastError = err;
-            console.warn(`Attempt ${attempt} network error:`, err);
+            console.warn(`[M-Pesa] Attempt ${attempt} error:`, err.name === 'AbortError' ? 'TIMEOUT' : err.message);
+            if (err.name === 'AbortError') {
+                // If it's a timeout, we might not want to retry with the same signal
+                // but let's see if the loop continues.
+            }
         }
         if (attempt < maxAttempts) {
-            const delay = baseDelayMs * attempt; // 1.2s, 2.4s
+            const delay = baseDelayMs * attempt;
             await new Promise(r => setTimeout(r, delay));
         }
     }
@@ -60,15 +65,15 @@ export async function POST(req: Request) {
 
         let accessToken: string;
         try {
-            // Use a 15s timeout for auth
+            // Use a 30s timeout for auth
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
 
             const tokenRes = await fetchWithRetry(tokenUrl, {
                 headers: { Authorization: `Basic ${authHeader}` },
                 cache: 'no-store',
                 signal: controller.signal
-            }, 2); // Only 2 attempts for speed
+            }, 1); // 1 attempt for auth is usually enough
 
             clearTimeout(timeoutId);
 
@@ -140,8 +145,10 @@ export async function POST(req: Request) {
         const stkUrl = `${baseUrl}/mpesa/stkpush/v1/processrequest`;
         let stkRes: Response;
         try {
+            console.log(`[M-Pesa] Initiating STK Push to ${formattedPhone} for ${amount} KES...`);
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            // Increase to 45s for sandbox because it's slow
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
 
             stkRes = await fetchWithRetry(stkUrl, {
                 method: 'POST',
@@ -152,7 +159,7 @@ export async function POST(req: Request) {
                 },
                 body: JSON.stringify(stkBody),
                 signal: controller.signal
-            }, 2); // 2 attempts max
+            }, 1); // Only 1 attempt if it takes 45s
 
             clearTimeout(timeoutId);
         } catch (stkErr) {
