@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+import { getResolvedPDFJS, extractText } from "unpdf";
 
 export const runtime = "nodejs";
 
@@ -41,8 +40,10 @@ export async function POST(req: NextRequest) {
         // 2. Extract text from PDF
         let extractedText = "";
         try {
-            const data = await pdfParse(buffer);
-            extractedText = data.text;
+            // unpdf requires the pdfjs-dist worker to be resolved
+            await getResolvedPDFJS();
+            const { text } = await extractText(buffer);
+            extractedText = Array.isArray(text) ? text.join("\n") : text;
         } catch (parseError) {
             console.error("PDF Parsing Error:", parseError);
             return NextResponse.json(
@@ -100,14 +101,14 @@ ${resumeSnippet}`;
             throw new Error("AI returned an empty response.");
         }
 
-        console.log("Gemini raw response:", responseText.substring(0, 500));
+        console.log("Groq raw response:", responseText.substring(0, 500));
 
         // 6. Robust JSON extraction — strips markdown fences if present, then parses
         let questionsArray: string[] = [];
         let candidateName = "Candidate";
 
         try {
-            // Strip common markdown code fences Gemini sometimes wraps around JSON
+            // Strip common markdown code fences Groq sometimes wraps around JSON
             let cleaned = responseText.trim();
             cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 
@@ -116,7 +117,7 @@ ${resumeSnippet}`;
             const endIdx = cleaned.lastIndexOf("}");
 
             if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
-                console.error("No JSON object found in Gemini response. Raw:", responseText);
+                console.error("No JSON object found in Groq response. Raw:", responseText);
                 throw new Error("No JSON object found in response");
             }
 
@@ -134,7 +135,7 @@ ${resumeSnippet}`;
             }
         } catch (jsonError) {
             console.error("JSON Parsing Error:", jsonError);
-            console.error("Full Gemini response:", responseText);
+            console.error("Full Groq response:", responseText);
             return NextResponse.json(
                 { error: "The AI returned an unexpected format. Please try again." },
                 { status: 500 }
@@ -158,7 +159,7 @@ ${resumeSnippet}`;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const err = error as any;
 
-        // Handle Gemini Quota/Rate Limit Errors
+        // Handle Groq Quota/Rate Limit Errors
         if (err.message?.includes("RESOURCE_EXHAUSTED") || err.status === "RESOURCE_EXHAUSTED") {
             return NextResponse.json(
                 { error: "AI service is currently busy (Rate Limit reached). Please wait 60 seconds and try again." },

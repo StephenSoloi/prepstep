@@ -71,7 +71,7 @@ ${transcriptText.substring(0, 28000)}`;
 
         let feedback;
         try {
-            // Strip markdown formatting if Gemini wrapped it
+            // Strip markdown formatting if Groq wrapped it
             let cleaned = responseText.trim();
             cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 
@@ -163,7 +163,7 @@ ${transcriptText.substring(0, 28000)}`;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const err = error as any;
 
-        // Handle Gemini Quota/Rate Limit Errors
+        // Handle Groq Quota/Rate Limit Errors
         if (err.message?.includes("RESOURCE_EXHAUSTED") || err.status === "RESOURCE_EXHAUSTED" || err.code === 429) {
             return NextResponse.json(
                 { error: "AI service is currently busy (Rate Limit reached). Please wait 60 seconds and try again." },
