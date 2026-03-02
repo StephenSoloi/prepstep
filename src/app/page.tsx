@@ -107,11 +107,6 @@ export default function Home() {
                 Pricing
               </Link>
               <SignInButton mode="modal">
-                <button className="px-3 py-1.5 sm:px-5 sm:py-2 rounded-full font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/10 text-xs sm:text-sm">
-                  Log In
-                </button>
-              </SignInButton>
-              <SignInButton mode="modal">
                 <button className="px-3 py-1.5 sm:px-5 sm:py-2 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 text-xs sm:text-sm">
                   Get Started →
                 </button>

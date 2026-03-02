@@ -36,12 +36,18 @@ export default function PricingPage() {
     setErrorMsg("");
     setSuccessMsg("");
 
+    // Universal Format: Ensure we always send 254... to the backend
+    let finalPhone = cleanPhone;
+    if (cleanPhone.startsWith("0")) {
+      finalPhone = "254" + cleanPhone.substring(1);
+    }
+
     try {
       const res = await fetch("/api/mpesa/stkpush", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phoneNumber: cleanPhone,
+          phoneNumber: finalPhone,
           amount: 1000, // 1000 KES for Pro tier
           accountReference: "PrepStep Pro",
           transactionDesc: "Upgrade to Pro Tier",
@@ -73,7 +79,7 @@ export default function PricingPage() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/20 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/20 blur-[120px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 relative z-10 flex flex-col items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20 pb-12 relative z-10 flex flex-col items-center">
         {/* Nav */}
         <header className="w-full flex justify-between items-center mb-16">
           <Link

@@ -9,32 +9,29 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Phone number and amount are required' }, { status: 400 });
         }
 
-        const consumerKey = process.env.MPESA_CONSUMER_KEY;
-        const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
-        const shortcode = process.env.MPESA_SHORTCODE || '174379';
-        const passkey = process.env.MPESA_PASSKEY || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
+        const consumerKey = process.env.MPESA_CONSUMER_KEY?.trim();
+        const consumerSecret = process.env.MPESA_CONSUMER_SECRET?.trim();
+        const shortcode = process.env.MPESA_SHORTCODE?.trim() || '174379';
+        const passkey = process.env.MPESA_PASSKEY?.trim() || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
 
         if (!consumerKey || !consumerSecret) {
-            console.error('M-Pesa keys missing in environment variables');
-            return NextResponse.json({ error: 'M-Pesa payment service is currently misconfigured. Please check environment variables.' }, { status: 500 });
+            console.error('M-Pesa keys missing or empty');
+            return NextResponse.json({ error: 'M-Pesa service misconfigured. Keys missing.' }, { status: 500 });
         }
 
         // 1. Get Access Token
         const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
 
-        // Sandbox URL for Daraja
         const tokenUrl = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
         const tokenRes = await fetch(tokenUrl, {
-            headers: {
-                Authorization: `Basic ${auth}`,
-            },
+            headers: { Authorization: `Basic ${auth}` },
             cache: 'no-store'
         });
 
         if (!tokenRes.ok) {
             const errorText = await tokenRes.text();
             console.error('M-Pesa auth error:', errorText);
-            return NextResponse.json({ error: 'Failed to authenticate with M-Pesa. Internal config issue.' }, { status: 500 });
+            return NextResponse.json({ error: 'Auth failed with Safaricom.', details: errorText }, { status: 500 });
         }
 
         const tokenData = await tokenRes.json();
@@ -43,7 +40,6 @@ export async function POST(req: Request) {
         // 2. Initiate STK Push
         const stkUrl = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
-        // Format timestamp: YYYYMMDDHHmmss
         const now = new Date();
         const timestamp = now.getFullYear().toString() +
             (now.getMonth() + 1).toString().padStart(2, '0') +
@@ -54,20 +50,17 @@ export async function POST(req: Request) {
 
         const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
 
-        // Format phone number to 254... (Robust check)
-        let formattedPhone = phoneNumber.replace(/\D/g, ''); // Remove all non-digits
-        if (formattedPhone.startsWith('0')) {
-            formattedPhone = '254' + formattedPhone.substring(1);
-        } else if (formattedPhone.startsWith('+')) {
-            formattedPhone = formattedPhone.substring(1);
-        } else if (formattedPhone.startsWith('254')) {
-            // already correct
+        // Foolproof phone formatting
+        let clean = phoneNumber.replace(/\D/g, '');
+        let formattedPhone;
+        if (clean.startsWith('0')) {
+            formattedPhone = '254' + clean.substring(1);
+        } else if (clean.startsWith('254')) {
+            formattedPhone = clean;
         } else {
-            // fallback for 7... format
-            formattedPhone = '254' + formattedPhone;
+            formattedPhone = '254' + clean;
         }
 
-        // Usually callback needs to be real internet-facing HTTPS.
         const callbackUrl = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/api/mpesa/callback` : 'https://prepstep.vercel.app/api/mpesa/callback';
 
         const stkBody = {
@@ -80,8 +73,8 @@ export async function POST(req: Request) {
             PartyB: shortcode,
             PhoneNumber: formattedPhone,
             CallBackURL: callbackUrl,
-            AccountReference: accountReference || 'PrepStep Tier Upgrade',
-            TransactionDesc: transactionDesc || 'Payment for PrepStep Tier'
+            AccountReference: (accountReference || 'PrepStep').substring(0, 12),
+            TransactionDesc: (transactionDesc || 'Upgrade').substring(0, 20)
         };
 
         const stkRes = await fetch(stkUrl, {
@@ -93,30 +86,28 @@ export async function POST(req: Request) {
             body: JSON.stringify(stkBody),
         });
 
-        // Get raw text first to avoid double-consumption of stream
         const stkText = await stkRes.text();
         let stkData;
         try {
             stkData = JSON.parse(stkText);
         } catch (e) {
-            console.error('Failed to parse STK response as JSON. Raw response:', stkText);
+            console.error('Raw M-Pesa error response:', stkText);
             return NextResponse.json({
-                error: 'Invalid response format from M-Pesa. This usually means the request was rejected at a low level.',
-                details: stkText.substring(0, 200)
+                error: 'Invalid response from M-Pesa.',
+                details: stkText.substring(0, 300)
             }, { status: 500 });
         }
 
         if (!stkRes.ok || stkData.errorMessage || stkData.errorCode) {
-            console.error('STK Push error:', stkData);
             return NextResponse.json({
-                error: stkData.errorMessage || stkData.ResponseDescription || 'M-Pesa STK Push failed. Please try again.'
+                error: stkData.errorMessage || stkData.ResponseDescription || 'STK Push failed.',
+                details: stkData
             }, { status: 400 });
         }
 
         return NextResponse.json({ success: true, data: stkData });
 
     } catch (error: any) {
-        console.error('STK API Error Details:', error);
-        return NextResponse.json({ error: error.message || 'Payment Service Unavailable' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Payment Service Errors' }, { status: 500 });
     }
 }
