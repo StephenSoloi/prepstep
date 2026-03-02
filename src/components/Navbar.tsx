@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sparkles, LayoutDashboard, CreditCard, PlusCircle, Home as HomeIcon, Menu, X } from "lucide-react";
-import { SignInButton, SignedIn, SignedOut, UserButton, useAuth } from "@clerk/nextjs";
+import { SignInButton, SignOutButton, SignedIn, SignedOut, UserButton, useAuth } from "@clerk/nextjs";
+import { LogOut, LogIn } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -184,7 +185,31 @@ export default function Navbar() {
                                     <PlusCircle className="w-5 h-5" />
                                     New Interview
                                 </Link>
+
+                                <div className="h-px bg-white/10 my-2" />
+
+                                <SignOutButton>
+                                    <button
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="flex items-center gap-4 px-5 py-4 rounded-2xl text-lg font-semibold text-red-400 bg-red-400/5 hover:bg-red-400/10 transition-all border border-red-400/10 w-full text-left"
+                                    >
+                                        <LogOut className="w-5 h-5" />
+                                        Log Out
+                                    </button>
+                                </SignOutButton>
                             </SignedIn>
+                            <SignedOut>
+                                <div className="h-px bg-white/10 my-2" />
+                                <SignInButton mode="modal">
+                                    <button
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="flex items-center gap-4 px-5 py-4 rounded-2xl text-lg font-bold bg-indigo-600 text-white w-full text-left"
+                                    >
+                                        <LogIn className="w-5 h-5" />
+                                        Log In / Join
+                                    </button>
+                                </SignInButton>
+                            </SignedOut>
                         </div>
                     </motion.div>
                 )}
