@@ -12,8 +12,17 @@ export default function PricingPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const handlePayment = async () => {
-    if (!phone) {
-      setErrorMsg("Please enter your M-Pesa phone number");
+    // Sanitize: Remove spaces and anything not a digit
+    const cleanPhone = phone.replace(/\D/g, "");
+
+    // Validate Kenyan format: 
+    // 1. Local format: 07... or 01... (10 digits)
+    // 2. International: 2547... or 2541... (12 digits)
+    const isLocal = cleanPhone.length === 10 && (cleanPhone.startsWith("07") || cleanPhone.startsWith("01"));
+    const isIntl = cleanPhone.length === 12 && (cleanPhone.startsWith("2547") || cleanPhone.startsWith("2541"));
+
+    if (!isLocal && !isIntl) {
+      setErrorMsg("Please enter a valid Kenyan number (e.g. 07XXXXXXXX or 254XXXXXXXX)");
       return;
     }
 
@@ -26,7 +35,7 @@ export default function PricingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          phoneNumber: phone,
+          phoneNumber: cleanPhone,
           amount: 1000, // 1000 KES for Pro tier
           accountReference: "PrepStep Pro",
           transactionDesc: "Upgrade to Pro Tier",
