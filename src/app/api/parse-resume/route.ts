@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
-import { getResolvedPDFJS, extractText } from "unpdf";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
 export const runtime = "nodejs";
 
@@ -35,15 +35,27 @@ export async function POST(req: NextRequest) {
 
         // 1. Convert PDF to buffer
         const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
 
-        // 2. Extract text from PDF
+        // 2. Extract text from PDF using pdfjs-dist
         let extractedText = "";
         try {
-            // unpdf requires the pdfjs-dist worker to be resolved
-            await getResolvedPDFJS();
-            const { text } = await extractText(buffer);
-            extractedText = Array.isArray(text) ? text.join("\n") : text;
+            // Disable the web worker — not needed in a Node.js context
+            pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+
+            const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
+            const pdfDoc = await loadingTask.promise;
+            const pageTexts: string[] = [];
+
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                const page = await pdfDoc.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items
+                    .map((item) => ("str" in item ? item.str : ""))
+                    .join(" ");
+                pageTexts.push(pageText);
+            }
+
+            extractedText = pageTexts.join("\n");
         } catch (parseError) {
             console.error("PDF Parsing Error:", parseError);
             return NextResponse.json(
