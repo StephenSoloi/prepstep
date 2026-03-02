@@ -502,7 +502,16 @@ export default function Home() {
                               </div>
                             </div>
                             <ul className="space-y-3 mb-8 flex-1">
-                              {["Unlimited voice interviews", "Full Q&A breakdown report", "Suggested ideal answers", "Areas for improvement analysis", "Interview history & dashboard", "Share with mentor", "Priority support"].map((item, i) => (
+                              {[
+                                "Unlimited voice interviews",
+                                "Performance Analytics & Progress Trends",
+                                "Full Q&A breakdown report",
+                                "Suggested ideal answers",
+                                "Areas for improvement analysis",
+                                "Interview history & dashboard",
+                                "Share with mentor",
+                                "Priority support"
+                              ].map((item, i) => (
                                 <li key={i} className="flex items-center gap-3 text-sm text-slate-200">
                                   <CheckCircle className="w-4 h-4 text-indigo-400 shrink-0" /> {item}
                                 </li>

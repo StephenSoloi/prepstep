@@ -6,11 +6,11 @@ async function upgradeUser() {
         const user = await prisma.user.update({
             where: { email: 'regma254@gmail.com' },
             data: {
-                tier: 'FREE',
-                credits: 2
+                tier: 'PREMIUM',
+                credits: 500
             }
         });
-        console.log('SUCCESS: User downgraded to FREE with 2 credits.');
+        console.log('SUCCESS: User upgraded to PREMIUM with 500 credits.');
         console.log('User Details:', JSON.stringify(user, null, 2));
     } catch (error) {
         if (error.code === 'P2025') {
