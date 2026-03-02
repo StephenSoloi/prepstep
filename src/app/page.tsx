@@ -106,12 +106,12 @@ export default function Home() {
                 Pricing
               </Link>
               <SignInButton mode="modal">
-                <button className="px-5 py-2 rounded-full font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/10 text-sm">
+                <button className="px-3 py-1.5 sm:px-5 sm:py-2 rounded-full font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/10 text-xs sm:text-sm">
                   Log In
                 </button>
               </SignInButton>
               <SignInButton mode="modal">
-                <button className="px-5 py-2 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 text-sm">
+                <button className="px-3 py-1.5 sm:px-5 sm:py-2 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 text-xs sm:text-sm">
                   Get Started →
                 </button>
               </SignInButton>
@@ -325,11 +325,12 @@ export default function Home() {
                       className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white mb-5 leading-[1.08] px-2"
                     >
                       <motion.span
-                        animate={{ rotate: [0, -15, 10, -5, 0], y: [0, -6, 0] }}
-                        transition={{ delay: 0.8, duration: 0.6, ease: "easeInOut" }}
-                        style={{ display: "inline-block" }}
+                        animate={{ rotate: [0, 25, -15, 0], y: [0, -8, 0], x: [0, 4, 0] }}
+                        transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
+                        style={{ display: "inline-block", transformOrigin: "bottom right" }}
+                        className="relative mr-1 mb-1 translate-y-[4px] sm:translate-y-[8px] md:translate-y-[10px]"
                       >
-                        🔨
+                        <span className="inline-block transform -scale-x-100 select-none">🔨</span>
                       </motion.span>
                       {" "}
                       <motion.span
