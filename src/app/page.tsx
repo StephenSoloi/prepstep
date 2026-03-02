@@ -386,39 +386,26 @@ export default function Home() {
                       </motion.div>
                     </SignedIn>
 
-                    {/* ── SIGNED OUT: Compelling CTA ── */}
                     <SignedOut>
                       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="w-full max-w-xl mx-auto mb-16">
                         <div className="bg-gradient-to-br from-indigo-950/80 to-slate-900/80 border border-indigo-500/20 rounded-2xl sm:rounded-3xl p-8 sm:p-10 backdrop-blur-md shadow-2xl shadow-indigo-900/30">
-                          <div className="flex justify-center mb-5">
-                            <div className="w-16 h-16 rounded-full bg-indigo-500/20 flex items-center justify-center ring-1 ring-indigo-500/30">
-                              <Mic className="w-8 h-8 text-indigo-400" />
-                            </div>
-                          </div>
-                          <h3 className="text-2xl font-bold text-white mb-2">Ready to practice?</h3>
-                          <p className="text-slate-400 mb-3 text-sm leading-relaxed max-w-sm mx-auto">
-                            Get <span className="text-white font-semibold">2 free AI voice interviews</span> — no credit card needed. Real questions. Real-time feedback.
+                          <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">Your dream job is one practice away.</h3>
+                          <p className="text-slate-400 mb-8 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+                            PrepStep gives you a private space to practice, stumble, improve — and walk into that real interview ready.
                           </p>
-                          <div className="flex flex-wrap justify-center gap-3 text-xs text-slate-400 mb-7">
-                            <span className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Personalized questions</span>
-                            <span className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Voice-to-voice AI</span>
-                            <span className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Instant feedback report</span>
-                          </div>
                           <SignInButton mode="modal">
                             <button className="w-full px-8 py-4 rounded-full font-bold text-lg bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-95">
-                              Start Free — No Card Needed
+                              Start Practicing — It&apos;s Free, to start with.
                             </button>
                           </SignInButton>
-                          <p className="text-slate-500 text-xs mt-4">Already have an account?{" "}
-                            <SignInButton mode="modal">
-                              <span className="text-indigo-400 cursor-pointer hover:underline">Log in</span>
-                            </SignInButton>
-                          </p>
                         </div>
                       </motion.div>
                     </SignedOut>
 
                     {/* ── FEATURES ── */}
+                    <div className="text-center mb-8">
+                      <h2 className="text-3xl font-bold text-white">Features</h2>
+                    </div>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
                       className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 w-full text-left mb-20"
                     >
@@ -567,28 +554,8 @@ export default function Home() {
                       </div>
                     </motion.div>
 
-                    {/* ── FINAL CTA BANNER ── */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
-                      className="w-full max-w-3xl bg-gradient-to-br from-indigo-600/20 to-blue-700/10 border border-indigo-500/20 rounded-2xl p-10 text-center mb-8"
-                    >
-                      <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">Your dream job is one practice away.</h2>
-                      <p className="text-slate-400 mb-7 text-sm sm:text-base max-w-lg mx-auto">
-                        PrepStep gives you a private space to practice, stumble, improve — and walk into that real interview ready.
-                      </p>
-                      <SignedOut>
-                        <SignInButton mode="modal">
-                          <button className="px-8 py-4 rounded-full font-bold text-lg bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-95">
-                            Start Practicing — It&apos;s Free
-                          </button>
-                        </SignInButton>
-                      </SignedOut>
-                      <SignedIn>
-                        <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                          className="px-8 py-4 rounded-full font-bold text-lg bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 hover:scale-[1.02] active:scale-95">
-                          Start a New Interview ↑
-                        </button>
-                      </SignedIn>
-                    </motion.div>
+                    {/* ── FINAL FOOTER DIVIDER ── */}
+                    <div className="w-full h-px bg-white/5 mb-8" />
 
                     {/* Footer */}
                     <footer className="w-full text-center text-slate-600 text-xs pb-6">
