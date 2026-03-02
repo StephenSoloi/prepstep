@@ -30,7 +30,8 @@ export default function ProgressTracker({ interviews, isPremium }: ProgressTrack
       const fb = session.feedback as any;
       return {
         name: `Int ${index + 1}`,
-        score: fb?.metrics?.overallScore || Math.floor(Math.random() * (75 - 60 + 1) + 60), // Fallback for old ones
+        // Use real score, or a deterministic fallback based on the ID for old interviews
+        score: fb?.metrics?.overallScore || (session.id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0) % 15 + 70),
         date: new Date(session.createdAt).toLocaleDateString(),
       };
     })
@@ -58,7 +59,7 @@ export default function ProgressTracker({ interviews, isPremium }: ProgressTrack
             Unlock Analytics
           </a>
         </div>
-        
+
         {/* Blurred preview of a chart */}
         <div className="opacity-20 select-none pointer-events-none">
           <div className="h-48 w-full bg-slate-800 animate-pulse rounded-xl mb-4" />
@@ -99,37 +100,37 @@ export default function ProgressTracker({ interviews, isPremium }: ProgressTrack
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="#475569" 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
+                <XAxis
+                  dataKey="name"
+                  stroke="#475569"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
                   dy={10}
                 />
-                <YAxis 
-                  stroke="#475569" 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
+                <YAxis
+                  stroke="#475569"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
                   domain={[0, 100]}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px' }}
                   itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="score" 
-                  stroke="#818cf8" 
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  stroke="#818cf8"
                   strokeWidth={3}
-                  fillOpacity={1} 
-                  fill="url(#colorScore)" 
+                  fillOpacity={1}
+                  fill="url(#colorScore)"
                   animationDuration={1500}
                 />
               </AreaChart>
@@ -139,7 +140,7 @@ export default function ProgressTracker({ interviews, isPremium }: ProgressTrack
 
         {/* Quick Stats Blocks */}
         <div className="grid grid-cols-1 gap-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             className="bg-slate-900/80 border border-white/10 rounded-2xl p-5 flex items-center gap-4"
@@ -153,7 +154,7 @@ export default function ProgressTracker({ interviews, isPremium }: ProgressTrack
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
@@ -168,7 +169,7 @@ export default function ProgressTracker({ interviews, isPremium }: ProgressTrack
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
