@@ -92,50 +92,7 @@ export default function Home() {
       <div className="fixed bottom-[-15%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-700/20 blur-[140px] pointer-events-none" />
       <div className="fixed top-[40%] right-[20%] w-[25%] h-[25%] rounded-full bg-violet-700/10 blur-[100px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 relative z-10 flex flex-col items-center">
-
-        {/* ── NAV ─────────────────────────────────────── */}
-        <header className="w-full flex justify-between items-center mb-10 sm:mb-16">
-          <div className="flex items-center gap-2 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-blue-400">
-            <Sparkles className="text-indigo-400 w-6 h-6" />
-            PrepStep
-          </div>
-          <div className="flex items-center gap-3">
-            <SignedOut>
-              <Link href="#pricing" className="hidden sm:inline-flex px-4 py-2 rounded-full text-sm font-semibold text-slate-300 hover:text-white transition-colors">
-                Pricing
-              </Link>
-              <SignInButton mode="modal">
-                <button className="px-3 py-1.5 sm:px-5 sm:py-2 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 text-xs sm:text-sm">
-                  Get Started →
-                </button>
-              </SignInButton>
-            </SignedOut>
-            <SignedIn>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <Link
-                  href="#pricing"
-                  className="hidden sm:inline-flex px-4 py-2 rounded-full text-sm font-semibold text-slate-300 hover:text-white transition-colors"
-                >
-                  Pricing
-                </Link>
-                <Link
-                  href="/pricing"
-                  className="px-3 sm:px-4 py-2 rounded-full font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors border border-emerald-500/20 text-xs sm:text-sm"
-                >
-                  Upgrade
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="px-3 sm:px-4 py-2 rounded-full font-semibold bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors border border-indigo-500/20 text-xs sm:text-sm"
-                >
-                  Dashboard
-                </Link>
-                <UserButton appearance={{ elements: { userButtonAvatarBox: "w-9 h-9 border-2 border-indigo-500/50" } }} />
-              </div>
-            </SignedIn>
-          </div>
-        </header>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-10 relative z-10 flex flex-col items-center">
 
         {/* ── MAIN CONTENT SWITCHER ─────────────────────── */}
         <AnimatePresence mode="wait">

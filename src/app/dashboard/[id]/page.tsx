@@ -63,7 +63,7 @@ export default async function InterviewDetailPage({
       {/* Background Effects */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none" />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10 relative z-10 w-full">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-28 pb-10 relative z-10 w-full">
         {/* Header Nav */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 sm:mb-12">
           <div className="flex items-center gap-4">

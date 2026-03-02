@@ -79,50 +79,7 @@ export default function PricingPage() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/20 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/20 blur-[120px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20 pb-12 relative z-10 flex flex-col items-center">
-        {/* Nav */}
-        <header className="w-full flex justify-between items-center mb-16">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-blue-400"
-          >
-            <Sparkles className="text-indigo-400 w-6 h-6" />
-            PrepStep
-          </Link>
-          <div className="flex items-center gap-2 sm:gap-6">
-            <Link
-              href="/"
-              className="px-3 sm:px-0 py-2 sm:py-0 rounded-full sm:rounded-none font-semibold sm:font-medium text-xs sm:text-sm bg-slate-800/50 sm:bg-transparent text-slate-300 hover:text-white border border-slate-700 sm:border-0 sm:text-slate-400 transition-colors"
-            >
-              Home
-            </Link>
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="px-5 py-2 rounded-full font-semibold bg-white/10 hover:bg-white/20 transition-colors border border-white/10">
-                  Log In
-                </button>
-              </SignInButton>
-            </SignedOut>
-            <SignedIn>
-              <div className="flex items-center gap-2 sm:gap-4">
-                <Link
-                  href="/dashboard"
-                  className="px-3 sm:px-5 py-2 rounded-full font-semibold bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors border border-indigo-500/20 text-xs sm:text-sm"
-                >
-                  Dashboard
-                </Link>
-                <UserButton
-                  appearance={{
-                    elements: {
-                      userButtonAvatarBox:
-                        "w-10 h-10 border-2 border-indigo-500/50",
-                    },
-                  }}
-                />
-              </div>
-            </SignedIn>
-          </div>
-        </header>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-32 pb-12 relative z-10 flex flex-col items-center">
 
         <div className="text-center max-w-2xl mb-12">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4">

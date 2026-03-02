@@ -43,54 +43,7 @@ export default async function DashboardPage() {
       {/* Background Effects */}
       <div className="absolute top-0 right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/10 blur-[120px] pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 relative z-10 w-full">
-        {/* Header Navbar */}
-        <header className="w-full flex justify-between items-center mb-10 border-b border-white/10 pb-6">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="p-2 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition"
-            >
-              <Video className="w-6 h-6 text-indigo-400" />
-            </Link>
-            <h1 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-blue-400 flex items-center gap-2">
-              Dashboard
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Link
-              href="/pricing"
-              className="px-3 sm:px-5 py-2 rounded-full font-semibold bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors border border-emerald-500/20 text-xs sm:text-sm"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/"
-              className="px-3 sm:px-5 py-2 rounded-full font-semibold bg-indigo-600/10 text-indigo-400 hover:bg-indigo-600/20 transition-colors border border-indigo-600/20 text-xs sm:text-sm inline-flex sm:hidden"
-            >
-              Interview
-            </Link>
-            <Link
-              href={((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0 ? "/pricing" : "/"}
-              className={`hidden sm:inline-flex items-center justify-center px-5 py-2 rounded-full font-semibold transition-all shadow-lg active:scale-95 text-sm ${((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0
-                  ? "bg-slate-800 text-slate-300 border border-white/10"
-                  : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30"
-                }`}
-            >
-              {((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0 ? "Get Credits" : "New Interview"}
-            </Link>
-            <SignedIn>
-              <UserButton
-                appearance={{
-                  elements: {
-                    userButtonAvatarBox:
-                      "w-10 h-10 border-2 border-indigo-500/50",
-                  },
-                }}
-              />
-            </SignedIn>
-          </div>
-        </header>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-10 relative z-10 w-full">
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
           {/* Left Sidebar Profile View */}
@@ -150,8 +103,8 @@ export default async function DashboardPage() {
             <Link
               href={((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0 ? "/pricing" : "/"}
               className={`sm:hidden w-full inline-flex items-center justify-center px-6 py-4 rounded-xl font-semibold transition-all shadow-lg active:scale-95 ${((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0
-                  ? "bg-slate-800 text-slate-300 border border-white/10"
-                  : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30"
+                ? "bg-slate-800 text-slate-300 border border-white/10"
+                : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30"
                 }`}
             >
               {((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0 ? "Get More Credits" : "Start New Interview"}
