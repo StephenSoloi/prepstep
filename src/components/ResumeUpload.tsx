@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FileText, UploadCloud, Loader2 } from "lucide-react";
+import Link from "next/link";
 
 export default function ResumeUpload({
     onQuestionsGenerated,
@@ -111,21 +112,23 @@ export default function ResumeUpload({
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
-                            <a
-                                href="/pricing"
-                                className="px-8 py-3.5 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-95 text-sm sm:text-base"
+                            <Link
+                                href="/pricing#pro-tier"
+                                className="px-8 py-3.5 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-95 text-sm sm:text-base cursor-pointer"
                             >
                                 <span>{isPremium ? "Get More Credits" : "Upgrade to Pro"}</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                                 </svg>
-                            </a>
-                            <a
-                                href="/dashboard"
-                                className="px-8 py-3.5 rounded-full font-semibold border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 transition-all active:scale-95 text-sm sm:text-base"
-                            >
-                                View History
-                            </a>
+                            </Link>
+                            {isPremium && (
+                                <Link
+                                    href="/dashboard"
+                                    className="px-8 py-3.5 rounded-full font-semibold border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 transition-all active:scale-95 text-sm sm:text-base cursor-pointer"
+                                >
+                                    View History
+                                </Link>
+                            )}
                         </div>
                     </div>
                 ) : !file ? (

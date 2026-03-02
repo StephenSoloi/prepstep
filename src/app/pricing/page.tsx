@@ -166,7 +166,7 @@ export default function PricingPage() {
           </div>
 
           {/* Pro Tier */}
-          <div className="bg-gradient-to-br from-indigo-900/50 to-slate-900 border border-indigo-500/30 rounded-3xl p-8 backdrop-blur-md relative transform md:-translate-y-4 shadow-2xl shadow-indigo-600/20 flex flex-col">
+          <div id="pro-tier" className="bg-gradient-to-br from-indigo-900/50 to-slate-900 border border-indigo-500/30 rounded-3xl p-8 backdrop-blur-md relative transform md:-translate-y-4 shadow-2xl shadow-indigo-600/20 flex flex-col">
             <div className="absolute top-0 right-0 bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-3xl uppercase tracking-wider">
               Most Popular
             </div>
