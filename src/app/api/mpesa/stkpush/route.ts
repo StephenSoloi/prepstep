@@ -40,6 +40,7 @@ export async function POST(req: Request) {
         // 2. Initiate STK Push
         const stkUrl = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
+        // Precise 14-digit timestamp: YYYYMMDDHHmmss
         const now = new Date();
         const timestamp = now.getFullYear().toString() +
             (now.getMonth() + 1).toString().padStart(2, '0') +
@@ -77,30 +78,57 @@ export async function POST(req: Request) {
             TransactionDesc: (transactionDesc || 'Upgrade').substring(0, 20)
         };
 
-        const stkRes = await fetch(stkUrl, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(stkBody),
-        });
+        // Retry logic for unstable network connections to Safaricom Sandbox
+        let stkRes: Response | null = null;
+        let lastError = "";
+        let retryCount = 0;
+        const maxRetries = 2;
+
+        while (retryCount <= maxRetries) {
+            try {
+                stkRes = await fetch(stkUrl, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'User-Agent': 'PrepStep/1.0',
+                    },
+                    body: JSON.stringify(stkBody),
+                });
+                if (stkRes.ok || stkRes.status < 500) break; // Break if success or deterministic client error
+            } catch (err) {
+                lastError = err instanceof Error ? err.message : String(err);
+                console.warn(`M-Pesa attempt ${retryCount + 1} failed:`, lastError);
+            }
+            retryCount++;
+            if (retryCount <= maxRetries) await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+        }
+
+        if (!stkRes) {
+            return NextResponse.json({
+                error: 'Network timeout connection to M-Pesa.',
+                details: lastError
+            }, { status: 504 });
+        }
 
         const stkText = await stkRes.text();
         let stkData;
         try {
             stkData = JSON.parse(stkText);
         } catch {
-            console.error('Raw M-Pesa error response:', stkText);
+            console.error('Invalid JSON from Safaricom. Status:', stkRes.status, 'Body:', stkText.substring(0, 500));
             return NextResponse.json({
-                error: 'Invalid response from M-Pesa.',
-                details: stkText.substring(0, 300)
-            }, { status: 500 });
+                error: 'M-Pesa service returned an invalid response. Please try again in 30 seconds.',
+                details: stkText.substring(0, 300),
+                status: stkRes.status
+            }, { status: 502 });
         }
 
         if (!stkRes.ok || stkData.errorMessage || stkData.errorCode) {
+            console.error('M-Pesa Application Error:', stkData);
             return NextResponse.json({
-                error: stkData.errorMessage || stkData.ResponseDescription || 'STK Push failed.',
+                error: stkData.errorMessage || stkData.ResponseDescription || 'STK Push declined by service.',
                 details: stkData
             }, { status: 400 });
         }
@@ -108,6 +136,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: true, data: stkData });
 
     } catch (error: unknown) {
-        return NextResponse.json({ error: error instanceof Error ? error.message : 'Payment Service Errors' }, { status: 500 });
+        console.error('STK Push internal catch:', error);
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal Payment Service Error' }, { status: 500 });
     }
 }
