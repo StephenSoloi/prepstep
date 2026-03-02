@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
 
         // Foolproof phone formatting
-        let clean = phoneNumber.replace(/\D/g, '');
+        const clean = phoneNumber.replace(/\D/g, '');
         let formattedPhone;
         if (clean.startsWith('0')) {
             formattedPhone = '254' + clean.substring(1);
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
         let stkData;
         try {
             stkData = JSON.parse(stkText);
-        } catch (e) {
+        } catch {
             console.error('Raw M-Pesa error response:', stkText);
             return NextResponse.json({
                 error: 'Invalid response from M-Pesa.',
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ success: true, data: stkData });
 
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message || 'Payment Service Errors' }, { status: 500 });
+    } catch (error: unknown) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Payment Service Errors' }, { status: 500 });
     }
 }

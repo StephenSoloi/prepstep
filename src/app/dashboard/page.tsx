@@ -12,7 +12,8 @@ import {
   ChevronRight,
   UserCircle2,
 } from "lucide-react";
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { SignedIn, UserButton } from "@clerk/nextjs";
+import Image from "next/image";
 import ProgressTracker from "@/components/ProgressTracker";
 import BackToTop from "@/components/BackToTop";
 
@@ -95,9 +96,11 @@ export default async function DashboardPage() {
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-teal-400" />
               <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-6 border border-slate-700">
                 {clerkUser?.imageUrl ? (
-                  <img
+                  <Image
                     src={clerkUser.imageUrl}
                     alt="Profile"
+                    width={80}
+                    height={80}
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
@@ -162,7 +165,7 @@ export default async function DashboardPage() {
                   No Interviews Yet
                 </h3>
                 <p className="text-slate-400 max-w-sm mb-8 text-center">
-                  It looks like you haven't taken any mock interviews. Start
+                  It looks like you haven&apos;t taken any mock interviews. Start
                   your first session to get personalized AI feedback.
                 </p>
                 <Link
@@ -175,7 +178,7 @@ export default async function DashboardPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                 {interviews.map((session) => {
-                  const feedbackData = session.feedback as any;
+                  const feedbackData = session.feedback as unknown as { summary?: string };
                   const summaryObj =
                     feedbackData?.summary ||
                     "No summary available for this session.";
@@ -234,7 +237,8 @@ export default async function DashboardPage() {
 
             {/* Progress Analytics Section (moved after history) */}
             <div className="mt-16">
-              <ProgressTracker interviews={interviews} isPremium={user?.tier === "PREMIUM"} />
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              <ProgressTracker interviews={interviews as any} isPremium={user?.tier === "PREMIUM"} />
             </div>
           </div>
         </div>

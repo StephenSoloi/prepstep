@@ -7,10 +7,8 @@ import {
   CheckCircle,
   TrendingUp,
   FileText,
-  Calendar,
   Building2,
   Lock,
-  Sparkles,
 } from "lucide-react";
 import ShareButton from "@/components/ShareButton";
 import BackToTop from "@/components/BackToTop";
@@ -43,7 +41,22 @@ export default async function InterviewDetailPage({
     redirect("/dashboard");
   }
 
-  const feedback = session.feedback as any;
+  const feedback = session.feedback as unknown as {
+    summary?: string;
+    metrics?: {
+      overallScore: number;
+      confidence: number;
+      technicalPrecision: number;
+      starMethodAlignment: number;
+      clarityConciseness: number;
+    };
+    qaBreakdown?: {
+      question: string;
+      candidateAnswer: string;
+      suggestedAnswer: string;
+    }[];
+    improvingPoints?: string[];
+  };
 
   return (
     <main className="min-h-screen relative overflow-hidden bg-slate-950 font-sans text-slate-50">
@@ -130,7 +143,7 @@ export default async function InterviewDetailPage({
                   {/* Show only first question for FREE tier, all for PREMIUM */}
                   {feedback.qaBreakdown
                     .slice(0, session.user.tier === "FREE" ? 1 : undefined)
-                    .map((item: any, idx: number) => (
+                    .map((item, idx: number) => (
                       <div
                         key={idx}
                         className="border border-slate-700 rounded-xl overflow-hidden flex flex-col"

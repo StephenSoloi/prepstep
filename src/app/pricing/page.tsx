@@ -66,7 +66,7 @@ export default function PricingPage() {
           data.error || "Failed to initiate payment. Please check your number.",
         );
       }
-    } catch (err) {
+    } catch {
       setErrorMsg("An error occurred during payment.");
     } finally {
       setLoading(false);

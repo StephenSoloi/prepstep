@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Mic,
   FileText,
-  PlayCircle,
   Sparkles,
   CheckCircle,
   TrendingUp,
@@ -197,7 +196,7 @@ export default function Home() {
                             Question-by-Question Breakdown
                           </h3>
                           <div className="space-y-6">
-                            {feedback.qaBreakdown.map((item: any, idx: number) => (
+                            {feedback.qaBreakdown.map((item, idx: number) => (
                               <div key={idx} className="border border-slate-700 rounded-xl overflow-hidden">
                                 <div className="bg-indigo-600/10 border-b border-slate-700 px-4 sm:px-5 py-3">
                                   <p className="text-indigo-300 font-semibold text-xs uppercase tracking-wide mb-1">Question {idx + 1}</p>
@@ -352,7 +351,7 @@ export default function Home() {
                         className="text-base sm:text-lg md:text-xl text-slate-400 max-w-2xl mb-10 px-2 leading-relaxed"
                       >
                         Upload your resume — our AI reads it, understands your background, and conducts a{" "}
-                        <span className="text-white font-medium">realistic real-time voice interview</span> tailored exactly to the role you're applying for.
+                        <span className="text-white font-medium">realistic real-time voice interview</span> tailored exactly to the role you&apos;re applying for.
                       </motion.p>
                     </SignedOut>
 

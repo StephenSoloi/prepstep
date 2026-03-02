@@ -153,11 +153,13 @@ ${resumeSnippet}`;
             { status: 200 }
         );
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("API Route Error:", error);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const err = error as any;
 
         // Handle Gemini Quota/Rate Limit Errors
-        if (error.message?.includes("RESOURCE_EXHAUSTED") || error.status === "RESOURCE_EXHAUSTED") {
+        if (err.message?.includes("RESOURCE_EXHAUSTED") || err.status === "RESOURCE_EXHAUSTED") {
             return NextResponse.json(
                 { error: "AI service is currently busy (Rate Limit reached). Please wait 60 seconds and try again." },
                 { status: 429 }

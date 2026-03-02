@@ -15,15 +15,12 @@ import { motion } from "framer-motion";
 interface InterviewSession {
   id: string;
   createdAt: string | Date;
-  feedback: {
-    metrics?: {
-      overallScore?: number;
-    };
-  } | null | any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  feedback: any; // Using any here because Prisma JsonValue is complex to type perfectly across files
 }
 
 interface ProgressTrackerProps {
-  interviews: any[]; // Kept as array but internal map will be typed
+  interviews: InterviewSession[];
   isPremium: boolean;
 }
 
@@ -34,8 +31,8 @@ export default function ProgressTracker({ interviews, isPremium }: ProgressTrack
   // Process data for the chart (oldest to newest)
   const chartData = [...interviews]
     .reverse()
-    .map((session: InterviewSession, index: number) => {
-      const fb = session.feedback as any;
+    .map((session, index: number) => {
+      const fb = session.feedback;
       return {
         name: `Int ${index + 1}`,
         // Use real score, or a deterministic fallback based on the ID for old interviews

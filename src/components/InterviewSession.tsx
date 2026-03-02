@@ -4,6 +4,13 @@ import { useEffect, useState, useRef } from "react";
 import Vapi from "@vapi-ai/web";
 import { Mic, MicOff, PhoneOff, AudioLines, ShieldAlert, Sparkles, Loader2 } from "lucide-react";
 
+interface VapiMessage {
+    type: string;
+    transcriptType?: string;
+    role?: string;
+    transcript?: string;
+}
+
 export default function InterviewSession({
     questions,
     applicantName,
@@ -21,7 +28,8 @@ export default function InterviewSession({
     companyDescription: string;
     onEnd: (transcript: { role: string; text: string }[]) => void;
 }) {
-    const vapiRef = useRef<Vapi | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const vapiRef = useRef<any>(null); // Kept as any for the ref itself since SDK typing can be inconsistent
     const transcriptRef = useRef<{ role: string; text: string }[]>([]);
     const [isCallActive, setIsCallActive] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
@@ -44,8 +52,8 @@ export default function InterviewSession({
                 onEnd(transcriptRef.current);
             });
 
-            vapi.on("message", (message: any) => {
-                if (message.type === "transcript" && message.transcriptType === "final") {
+            vapi.on("message", (message: VapiMessage) => {
+                if (message.type === "transcript" && message.transcriptType === "final" && message.role && message.transcript) {
                     transcriptRef.current.push({
                         role: message.role,
                         text: message.transcript,
@@ -134,7 +142,7 @@ ${questionsBlock}`;
                 throw new Error("NEXT_PUBLIC_VAPI_ASSISTANT_ID is not set in .env");
             }
 
-            await (vapiRef.current as any).start(assistantId, {
+            await vapiRef.current.start(assistantId, {
                 firstMessage,
                 model: {
                     provider: "openai",

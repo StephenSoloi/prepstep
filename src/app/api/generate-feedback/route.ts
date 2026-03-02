@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No transcript provided" }, { status: 400 });
         }
 
-        const transcriptText = transcript.map((t: any) => `${t.role.toUpperCase()}: ${t.text}`).join("\n");
+        const transcriptText = transcript.map((t: { role: string; text: string }) => `${t.role.toUpperCase()}: ${t.text}`).join("\n");
 
         const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
@@ -158,17 +158,19 @@ ${transcriptText.substring(0, 28000)}`;
 
         return NextResponse.json({ feedback }, { status: 200 });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Feedback Generation Error:", error);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const err = error as any;
 
         // Handle Gemini Quota/Rate Limit Errors
-        if (error.message?.includes("RESOURCE_EXHAUSTED") || error.status === "RESOURCE_EXHAUSTED" || error.code === 429) {
+        if (err.message?.includes("RESOURCE_EXHAUSTED") || err.status === "RESOURCE_EXHAUSTED" || err.code === 429) {
             return NextResponse.json(
                 { error: "AI service is currently busy (Rate Limit reached). Please wait 60 seconds and try again." },
                 { status: 429 }
             );
         }
 
-        return NextResponse.json({ error: error.message || "Something went wrong" }, { status: 500 });
+        return NextResponse.json({ error: (error instanceof Error ? error.message : "Something went wrong") }, { status: 500 });
     }
 }
