@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import ShareButton from "@/components/ShareButton";
+import BackToTop from "@/components/BackToTop";
 
 export default async function InterviewDetailPage({
   params,
@@ -223,6 +224,7 @@ export default async function InterviewDetailPage({
             )}
         </div>
       </div>
+      <BackToTop />
     </main>
   );
 }

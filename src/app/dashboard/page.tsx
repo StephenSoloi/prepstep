@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import ProgressTracker from "@/components/ProgressTracker";
+import BackToTop from "@/components/BackToTop";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -125,8 +126,8 @@ export default async function DashboardPage() {
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-400">Interviews Left</span>
-                  <span className={`font-bold ${user?.credits && user.credits <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                    {user?.credits ?? 0} / {user?.tier === "PREMIUM" ? 5 : 2}
+                  <span className={`font-bold ${(user?.tier === "PREMIUM" ? 5 : 2) - interviews.length <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {Math.max(0, (user?.tier === "PREMIUM" ? 5 : 2) - interviews.length)} / {user?.tier === "PREMIUM" ? 5 : 2}
                   </span>
                 </div>
               </div>
@@ -235,6 +236,7 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+      <BackToTop />
     </main>
   );
 }

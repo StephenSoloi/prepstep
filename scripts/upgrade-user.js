@@ -7,10 +7,10 @@ async function upgradeUser() {
             where: { email: 'regma254@gmail.com' },
             data: {
                 tier: 'PREMIUM',
-                credits: 500
+                credits: 4
             }
         });
-        console.log('SUCCESS: User upgraded to PREMIUM with 500 credits.');
+        console.log('SUCCESS: User upgraded to PREMIUM with 4 credits.');
         console.log('User Details:', JSON.stringify(user, null, 2));
     } catch (error) {
         if (error.code === 'P2025') {

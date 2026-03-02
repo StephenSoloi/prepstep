@@ -12,64 +12,36 @@ export async function GET() {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // 1. Try to find the user
-        let dbUser = await prisma.user.findUnique({
+        // 1. Try to find the user with their interview count
+        const user = await prisma.user.findUnique({
             where: { clerkId: userId },
-            select: {
-                tier: true,
-                credits: true,
-            },
-        });
-
-        // 2. If user doesn't exist by Clerk ID, try finding by Email or Create them
-        if (!dbUser) {
-            const clerkUser = await currentUser();
-            if (clerkUser) {
-                const email = clerkUser.emailAddresses[0]?.emailAddress;
-                if (email) {
-                    // Use upsert by CLERK_ID but handle email conflict manually
-                    // or just find by email first
-                    const existingByEmail = await prisma.user.findUnique({
-                        where: { email }
-                    });
-
-                    if (existingByEmail) {
-                        // Link the existing email record to this new Clerk ID
-                        dbUser = await prisma.user.update({
-                            where: { id: existingByEmail.id },
-                            data: { clerkId: userId },
-                            select: { tier: true, credits: true }
-                        });
-                    } else {
-                        // Create brand new user
-                        dbUser = await prisma.user.create({
-                            data: {
-                                clerkId: userId,
-                                email: email,
-                                firstName: clerkUser.firstName,
-                                lastName: clerkUser.lastName,
-                                tier: "FREE",
-                                credits: 2
-                            },
-                            select: { tier: true, credits: true }
-                        });
-                    }
+            include: {
+                _count: {
+                    select: { interviews: true }
                 }
             }
-        }
+        });
 
         const limits: Record<string, number> = {
             FREE: 2,
             PREMIUM: 5,
         };
 
-        if (!dbUser) {
+        if (!user) {
+            // Simplified fallback for new users during this specific fetch
             return NextResponse.json({ tier: "FREE", credits: 2, limit: 2 });
         }
 
+        const limit = limits[user.tier] || 2;
+        const used = user._count.interviews;
+
+        // We override the 'credits' field with the real-time calculated balance
+        const currentCredits = Math.max(0, limit - used);
+
         return NextResponse.json({
-            ...dbUser,
-            limit: limits[dbUser.tier] || 2,
+            tier: user.tier,
+            credits: currentCredits,
+            limit: limit,
         });
     } catch (error) {
         console.error("User status error:", error);

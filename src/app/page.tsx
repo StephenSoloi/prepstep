@@ -21,6 +21,7 @@ import { SignInButton, SignedIn, SignedOut, UserButton, useAuth } from "@clerk/n
 import Link from "next/link";
 import ResumeUpload from "@/components/ResumeUpload";
 import InterviewSession from "@/components/InterviewSession";
+import BackToTop from "@/components/BackToTop";
 
 export default function Home() {
   const { isSignedIn } = useAuth();
@@ -375,7 +376,7 @@ export default function Home() {
                           </div>
                         )}
                         <ResumeUpload
-                          onQuestionsGenerated={(generatedQuestions, name, compName, posApplied, resumeTxt, compDesc) => {
+                          onQuestionsGenerated={(generatedQuestions: string[], name: string, compName: string, posApplied: string, resumeTxt: string, compDesc: string) => {
                             setQuestions(generatedQuestions);
                             setApplicantName(name);
                             setCompanyName(compName);
@@ -537,6 +538,7 @@ export default function Home() {
                 )}
         </AnimatePresence>
       </div>
+      <BackToTop />
     </main>
   );
 }
