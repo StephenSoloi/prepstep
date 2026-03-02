@@ -61,7 +61,7 @@ export default function ProgressTracker({ interviews, isPremium }: ProgressTrack
             Upgrade to Pro to visualize your progress over time, track metrics across sessions, and get AI-driven coaching trends.
           </p>
           <a
-            href="/pricing"
+            href="/pricing#payment-section"
             className="px-6 py-2.5 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 text-sm"
           >
             Unlock Analytics

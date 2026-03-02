@@ -485,9 +485,6 @@ export default function Home() {
                                 <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" /> Upgrade anytime
                               </li>
                             </ul>
-                            <div className="w-full py-3 rounded-full font-bold bg-white/10 text-white hover:bg-white/15 transition-all border border-white/10 text-center cursor-pointer">
-                              <SignInButton mode="modal">Get Started Free</SignInButton>
-                            </div>
                           </div>
 
                           {/* Pro card */}

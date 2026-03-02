@@ -28,7 +28,7 @@ export default function PricingPage() {
     const isIntl = cleanPhone.length === 12 && (cleanPhone.startsWith("2547") || cleanPhone.startsWith("2541"));
 
     if (!isLocal && !isIntl) {
-      setErrorMsg("Please enter a valid Kenyan number (e.g. 07XXXXXXXX or 01XXXXXXXX)");
+      setErrorMsg("Please enter a valid Kenyan number (e.g. +2547XXXXXXXX or 07XXXXXXXX)");
       return;
     }
 
@@ -199,13 +199,13 @@ export default function PricingPage() {
             </ul>
 
             <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 mt-auto shadow-inner">
-              <h3 className="font-semibold mb-3 flex items-center gap-2 text-green-400">
+              <h3 id="payment-section" className="font-semibold mb-3 flex items-center gap-2 text-green-400">
                 <CreditCard className="w-5 h-5" /> Pay with M-Pesa
               </h3>
               <div className="flex flex-col gap-3">
                 <input
                   type="text"
-                  placeholder="e.g. 07XXXXXXXX"
+                  placeholder="e.g. +2547XXXXXXXX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all font-mono"
