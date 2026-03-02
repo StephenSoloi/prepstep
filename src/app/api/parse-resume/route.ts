@@ -2,11 +2,68 @@ import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
-// pdf-parse is a reliable, pure-Node.js PDF extractor — no worker needed
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse");
 
 export const runtime = "nodejs";
+
+/**
+ * Extracts plain text from a PDF buffer without any external library.
+ * Works in every serverless environment — no worker, no native binaries.
+ * Handles standard text streams (BT/ET blocks) in spec-compliant PDFs.
+ */
+function extractPdfText(buffer: Buffer): string {
+    const raw = buffer.toString("latin1");
+    const texts: string[] = [];
+
+    // Pull every BT … ET (Begin Text / End Text) block
+    const btEtRegex = /BT[\s\S]*?ET/g;
+    let btMatch: RegExpExecArray | null;
+
+    while ((btMatch = btEtRegex.exec(raw)) !== null) {
+        const block = btMatch[0];
+
+        // Match Tj, TJ, and ' operators that carry text
+        const textOpRegex = /\(([^)]*)\)\s*(?:Tj|'|")|(\[([^\]]*)\])\s*TJ/g;
+        let opMatch: RegExpExecArray | null;
+
+        while ((opMatch = textOpRegex.exec(block)) !== null) {
+            if (opMatch[1] !== undefined) {
+                // Single string: (Hello) Tj
+                texts.push(decodePdfString(opMatch[1]));
+            } else if (opMatch[3] !== undefined) {
+                // Array: [(Hello) 20 (World)] TJ
+                const parts = opMatch[3].match(/\(([^)]*)\)/g) || [];
+                for (const p of parts) {
+                    texts.push(decodePdfString(p.slice(1, -1)));
+                }
+            }
+        }
+        texts.push(" "); // space between blocks
+    }
+
+    // Fallback: also grab any raw string literals outside BT/ET (e.g. form fields)
+    if (texts.join("").trim().length < 50) {
+        const fallback = raw.match(/\(([^\x00-\x08\x0e-\x1f)\\]{2,})\)/g) || [];
+        return fallback
+            .map(s => decodePdfString(s.slice(1, -1)))
+            .join(" ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    return texts.join("").replace(/\s+/g, " ").trim();
+}
+
+/** Decode common PDF string escape sequences */
+function decodePdfString(s: string): string {
+    return s
+        .replace(/\\n/g, "\n")
+        .replace(/\\r/g, "\r")
+        .replace(/\\t/g, "\t")
+        .replace(/\\\\/g, "\\")
+        .replace(/\\([0-7]{3})/g, (_, oct) =>
+            String.fromCharCode(parseInt(oct, 8))
+        );
+}
 
 export async function POST(req: NextRequest) {
     try {
@@ -29,21 +86,28 @@ export async function POST(req: NextRequest) {
 
             if (dbUser && dbUser.credits <= 0) {
                 return NextResponse.json(
-                    { error: `You have used all your ${dbUser.tier === 'PREMIUM' ? 'Pro' : 'free'} interview credits. Please upgrade or contact support to continue.` },
+                    { error: `You have used all your ${dbUser.tier === "PREMIUM" ? "Pro" : "free"} interview credits. Please upgrade or contact support to continue.` },
                     { status: 403 }
                 );
             }
         }
 
-        // 1. Convert file to a Node.js Buffer
+        // 1. Read file into a Node Buffer
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        // 2. Extract text using pdf-parse (works flawlessly in serverless/Vercel)
+        // Quick sanity check — all PDFs start with %PDF
+        if (!buffer.slice(0, 5).toString("ascii").startsWith("%PDF")) {
+            return NextResponse.json(
+                { error: "The uploaded file does not appear to be a valid PDF." },
+                { status: 400 }
+            );
+        }
+
+        // 2. Extract text
         let extractedText = "";
         try {
-            const data = await pdfParse(buffer);
-            extractedText = data.text || "";
+            extractedText = extractPdfText(buffer);
         } catch (parseError) {
             console.error("PDF Parsing Error:", parseError);
             return NextResponse.json(
@@ -52,20 +116,19 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        if (!extractedText || extractedText.trim().length === 0) {
+        if (!extractedText || extractedText.trim().length < 20) {
             return NextResponse.json(
-                { error: "No readable text found in the PDF. It might be an image-only PDF." },
+                { error: "No readable text found in the PDF. It might be an image-only or password-protected PDF." },
                 { status: 400 }
             );
         }
 
-        // truncate resume text to avoid excessive tokens
+        // Truncate to avoid excessive tokens
         const resumeSnippet = extractedText.substring(0, 12000);
 
-        // 3. Initialize Groq
+        // 3. Call Groq
         const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
-        // 4. Build the prompt
         const prompt = `You are an expert technical and behavioral interviewer for top companies.
 
 Job Context:
@@ -88,7 +151,6 @@ Return ONLY a raw JSON object. No markdown, no code fences, no backticks, no exp
 RESUME:
 ${resumeSnippet}`;
 
-        // 5. Call Groq
         const completion = await groq.chat.completions.create({
             model: "llama-3.3-70b-versatile",
             messages: [{ role: "user", content: prompt }],
@@ -97,35 +159,31 @@ ${resumeSnippet}`;
         });
 
         const responseText = completion.choices[0]?.message?.content || "";
-        if (!responseText) {
-            throw new Error("AI returned an empty response.");
-        }
+        if (!responseText) throw new Error("AI returned an empty response.");
 
         console.log("Groq raw response:", responseText.substring(0, 500));
 
-        // 6. Robust JSON extraction — strips markdown fences if present, then parses
+        // 4. Parse Groq JSON response
         let questionsArray: string[] = [];
         let candidateName = "Candidate";
 
         try {
-            // Strip common markdown code fences Groq sometimes wraps around JSON
             let cleaned = responseText.trim();
             cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
 
-            // Find the outermost JSON object
             const startIdx = cleaned.indexOf("{");
             const endIdx = cleaned.lastIndexOf("}");
 
             if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
-                console.error("No JSON object found in Groq response. Raw:", responseText);
                 throw new Error("No JSON object found in response");
             }
 
-            const jsonStr = cleaned.substring(startIdx, endIdx + 1);
-            const parsed = JSON.parse(jsonStr);
+            const parsed = JSON.parse(cleaned.substring(startIdx, endIdx + 1));
 
             if (parsed.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
-                questionsArray = parsed.questions.filter((q: unknown) => typeof q === "string" && q.trim().length > 0);
+                questionsArray = parsed.questions.filter(
+                    (q: unknown) => typeof q === "string" && q.trim().length > 0
+                );
             } else {
                 throw new Error("Parsed JSON has no valid questions array");
             }
@@ -134,8 +192,7 @@ ${resumeSnippet}`;
                 candidateName = parsed.name.trim();
             }
         } catch (jsonError) {
-            console.error("JSON Parsing Error:", jsonError);
-            console.error("Full Groq response:", responseText);
+            console.error("JSON Parsing Error:", jsonError, "\nFull response:", responseText);
             return NextResponse.json(
                 { error: "The AI returned an unexpected format. Please try again." },
                 { status: 500 }
@@ -159,10 +216,9 @@ ${resumeSnippet}`;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const err = error as any;
 
-        // Handle Groq Quota/Rate Limit Errors
         if (err.message?.includes("RESOURCE_EXHAUSTED") || err.status === "RESOURCE_EXHAUSTED") {
             return NextResponse.json(
-                { error: "AI service is currently busy (Rate Limit reached). Please wait 60 seconds and try again." },
+                { error: "AI service is currently busy. Please wait 60 seconds and try again." },
                 { status: 429 }
             );
         }
