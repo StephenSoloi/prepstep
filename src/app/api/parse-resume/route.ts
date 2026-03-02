@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+// pdf-parse is a reliable, pure-Node.js PDF extractor — no worker needed
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require("pdf-parse");
 
 export const runtime = "nodejs";
 
@@ -33,29 +35,15 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 1. Convert PDF to buffer
+        // 1. Convert file to a Node.js Buffer
         const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
 
-        // 2. Extract text from PDF using pdfjs-dist
+        // 2. Extract text using pdf-parse (works flawlessly in serverless/Vercel)
         let extractedText = "";
         try {
-            // Disable the web worker — not needed in a Node.js context
-            pdfjsLib.GlobalWorkerOptions.workerSrc = "";
-
-            const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
-            const pdfDoc = await loadingTask.promise;
-            const pageTexts: string[] = [];
-
-            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-                const page = await pdfDoc.getPage(pageNum);
-                const textContent = await page.getTextContent();
-                const pageText = textContent.items
-                    .map((item) => ("str" in item ? item.str : ""))
-                    .join(" ");
-                pageTexts.push(pageText);
-            }
-
-            extractedText = pageTexts.join("\n");
+            const data = await pdfParse(buffer);
+            extractedText = data.text || "";
         } catch (parseError) {
             console.error("PDF Parsing Error:", parseError);
             return NextResponse.json(

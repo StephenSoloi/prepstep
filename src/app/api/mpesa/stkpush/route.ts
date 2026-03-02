@@ -1,5 +1,33 @@
 import { NextResponse } from 'next/server';
 
+/** Fetch with automatic retry + exponential backoff */
+async function fetchWithRetry(
+    url: string,
+    options: RequestInit,
+    maxAttempts = 3,
+    baseDelayMs = 1200
+): Promise<Response> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            const res = await fetch(url, options);
+            // Retry only on server-side / network errors (5xx); surface 4xx immediately
+            if (res.status < 500) return res;
+            const body = await res.text();
+            console.warn(`Attempt ${attempt} got ${res.status}:`, body.substring(0, 200));
+            lastError = new Error(`HTTP ${res.status}: ${body.substring(0, 200)}`);
+        } catch (err) {
+            lastError = err;
+            console.warn(`Attempt ${attempt} network error:`, err);
+        }
+        if (attempt < maxAttempts) {
+            const delay = baseDelayMs * attempt; // 1.2s, 2.4s
+            await new Promise(r => setTimeout(r, delay));
+        }
+    }
+    throw lastError;
+}
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
@@ -19,30 +47,38 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'M-Pesa service misconfigured. Keys missing.' }, { status: 500 });
         }
 
-        // 1. Get Access Token
-        const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
-
+        // ── 1. Get Access Token (with retry) ──────────────────────────────
+        const authHeader = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
         const tokenUrl = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
-        const tokenRes = await fetch(tokenUrl, {
-            headers: { Authorization: `Basic ${auth}` },
-            cache: 'no-store'
-        });
 
-        if (!tokenRes.ok) {
-            const errorText = await tokenRes.text();
-            console.error('M-Pesa auth error:', errorText);
-            return NextResponse.json({ error: 'Auth failed with Safaricom.', details: errorText }, { status: 500 });
+        let accessToken: string;
+        try {
+            const tokenRes = await fetchWithRetry(tokenUrl, {
+                headers: { Authorization: `Basic ${authHeader}` },
+                cache: 'no-store',
+            });
+
+            if (!tokenRes.ok) {
+                const errorText = await tokenRes.text();
+                console.error('M-Pesa auth error:', errorText);
+                return NextResponse.json({ error: 'Could not authenticate with Safaricom. Try again.', details: errorText }, { status: 500 });
+            }
+
+            const tokenData = await tokenRes.json();
+            accessToken = tokenData.access_token;
+
+            if (!accessToken) {
+                return NextResponse.json({ error: 'No access token returned by Safaricom. Try again.' }, { status: 500 });
+            }
+        } catch (tokenErr) {
+            console.error('M-Pesa token fetch failed after retries:', tokenErr);
+            return NextResponse.json({ error: 'Connection to M-Pesa timed out. Please try again.' }, { status: 504 });
         }
 
-        const tokenData = await tokenRes.json();
-        const accessToken = tokenData.access_token;
-
-        // 2. Initiate STK Push
-        const stkUrl = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
-
-        // Precise 14-digit timestamp: YYYYMMDDHHmmss
+        // ── 2. Build STK Push payload ──────────────────────────────────────
         const now = new Date();
-        const timestamp = now.getFullYear().toString() +
+        const timestamp =
+            now.getFullYear().toString() +
             (now.getMonth() + 1).toString().padStart(2, '0') +
             now.getDate().toString().padStart(2, '0') +
             now.getHours().toString().padStart(2, '0') +
@@ -51,9 +87,9 @@ export async function POST(req: Request) {
 
         const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
 
-        // Foolproof phone formatting
+        // Normalise phone → 2547XXXXXXXX
         const clean = phoneNumber.replace(/\D/g, '');
-        let formattedPhone;
+        let formattedPhone: string;
         if (clean.startsWith('0')) {
             formattedPhone = '254' + clean.substring(1);
         } else if (clean.startsWith('254')) {
@@ -62,7 +98,9 @@ export async function POST(req: Request) {
             formattedPhone = '254' + clean;
         }
 
-        const callbackUrl = process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/api/mpesa/callback` : 'https://prepstep.vercel.app/api/mpesa/callback';
+        const callbackUrl = process.env.NEXT_PUBLIC_APP_URL
+            ? `${process.env.NEXT_PUBLIC_APP_URL}/api/mpesa/callback`
+            : 'https://prepstep.vercel.app/api/mpesa/callback';
 
         const stkBody = {
             BusinessShortCode: shortcode,
@@ -75,61 +113,45 @@ export async function POST(req: Request) {
             PhoneNumber: formattedPhone,
             CallBackURL: callbackUrl,
             AccountReference: (accountReference || 'PrepStep').substring(0, 12),
-            TransactionDesc: (transactionDesc || 'Upgrade').substring(0, 20)
+            TransactionDesc: (transactionDesc || 'Upgrade').substring(0, 20),
         };
 
-        // Retry logic for unstable network connections to Safaricom Sandbox
-        let stkRes: Response | null = null;
-        let lastError = "";
-        let retryCount = 0;
-        const maxRetries = 2;
-
-        while (retryCount <= maxRetries) {
-            try {
-                stkRes = await fetch(stkUrl, {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'User-Agent': 'PrepStep/1.0',
-                    },
-                    body: JSON.stringify(stkBody),
-                });
-                if (stkRes.ok || stkRes.status < 500) break; // Break if success or deterministic client error
-            } catch (err) {
-                lastError = err instanceof Error ? err.message : String(err);
-                console.warn(`M-Pesa attempt ${retryCount + 1} failed:`, lastError);
-            }
-            retryCount++;
-            if (retryCount <= maxRetries) await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+        // ── 3. Send STK Push (with retry) ─────────────────────────────────
+        const stkUrl = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
+        let stkRes: Response;
+        try {
+            stkRes = await fetchWithRetry(stkUrl, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify(stkBody),
+            });
+        } catch (stkErr) {
+            console.error('STK Push failed after retries:', stkErr);
+            return NextResponse.json({ error: 'M-Pesa STK Push timed out. Please try again.' }, { status: 504 });
         }
 
-        if (!stkRes) {
-            return NextResponse.json({
-                error: 'Network timeout connection to M-Pesa.',
-                details: lastError
-            }, { status: 504 });
-        }
-
+        // ── 4. Parse & return Safaricom response ──────────────────────────
         const stkText = await stkRes.text();
-        let stkData;
+        let stkData: Record<string, unknown>;
         try {
             stkData = JSON.parse(stkText);
         } catch {
             console.error('Invalid JSON from Safaricom. Status:', stkRes.status, 'Body:', stkText.substring(0, 500));
             return NextResponse.json({
-                error: 'M-Pesa service returned an invalid response. Please try again in 30 seconds.',
+                error: 'M-Pesa returned an unexpected response. Please retry in 30 seconds.',
                 details: stkText.substring(0, 300),
-                status: stkRes.status
             }, { status: 502 });
         }
 
         if (!stkRes.ok || stkData.errorMessage || stkData.errorCode) {
             console.error('M-Pesa Application Error:', stkData);
             return NextResponse.json({
-                error: stkData.errorMessage || stkData.ResponseDescription || 'STK Push declined by service.',
-                details: stkData
+                error: (stkData.errorMessage as string) || (stkData.ResponseDescription as string) || 'STK Push declined by Safaricom.',
+                details: stkData,
             }, { status: 400 });
         }
 
@@ -137,6 +159,9 @@ export async function POST(req: Request) {
 
     } catch (error: unknown) {
         console.error('STK Push internal catch:', error);
-        return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal Payment Service Error' }, { status: 500 });
+        return NextResponse.json(
+            { error: error instanceof Error ? error.message : 'Internal Payment Service Error' },
+            { status: 500 }
+        );
     }
 }
