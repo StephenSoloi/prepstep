@@ -71,10 +71,13 @@ export default async function DashboardPage() {
               Interview
             </Link>
             <Link
-              href="/"
-              className="hidden sm:inline-flex items-center justify-center px-5 py-2 rounded-full font-semibold bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/30 text-sm"
+              href={((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0 ? "/pricing" : "/"}
+              className={`hidden sm:inline-flex items-center justify-center px-5 py-2 rounded-full font-semibold transition-all shadow-lg active:scale-95 text-sm ${((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0
+                  ? "bg-slate-800 text-slate-300 border border-white/10"
+                  : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30"
+                }`}
             >
-              New Interview
+              {((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0 ? "Get Credits" : "New Interview"}
             </Link>
             <SignedIn>
               <UserButton
@@ -114,12 +117,19 @@ export default async function DashboardPage() {
                 {clerkUser?.emailAddresses[0]?.emailAddress}
               </p>
 
-              <div className="pt-6 border-t border-slate-800/50 space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Interviews Left</span>
-                  <span className={`font-bold ${(user?.tier === "PREMIUM" ? 5 : 2) - interviews.length <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                    {Math.max(0, (user?.tier === "PREMIUM" ? 5 : 2) - interviews.length)} / {user?.tier === "PREMIUM" ? 5 : 2}
-                  </span>
+              <div className="pt-6 border-t border-slate-800/50 space-y-4">
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-400">Interviews Left</span>
+                    <span className={`font-bold ${((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                      {Math.max(0, (user?.tier === "PREMIUM" ? 5 : 2) - interviews.length)} / {user?.tier === "PREMIUM" ? 5 : 2}
+                    </span>
+                  </div>
+                  {((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0 && (
+                    <Link href="/pricing" className="text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors font-bold uppercase tracking-tight flex items-center gap-1 justify-end animate-pulse">
+                      {user?.tier === "PREMIUM" ? "Renew to get more" : "Upgrade to unlock more"} →
+                    </Link>
+                  )}
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-400">Account Tier</span>
@@ -138,10 +148,13 @@ export default async function DashboardPage() {
 
             {/* Mobile CTA */}
             <Link
-              href="/"
-              className="sm:hidden w-full inline-flex items-center justify-center px-6 py-4 rounded-xl font-semibold bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/30"
+              href={((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0 ? "/pricing" : "/"}
+              className={`sm:hidden w-full inline-flex items-center justify-center px-6 py-4 rounded-xl font-semibold transition-all shadow-lg active:scale-95 ${((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0
+                  ? "bg-slate-800 text-slate-300 border border-white/10"
+                  : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30"
+                }`}
             >
-              Start New Interview
+              {((user?.tier === "PREMIUM" ? 5 : 2) - interviews.length) <= 0 ? "Get More Credits" : "Start New Interview"}
             </Link>
           </div>
 

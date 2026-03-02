@@ -5,8 +5,10 @@ import { FileText, UploadCloud, Loader2 } from "lucide-react";
 
 export default function ResumeUpload({
     onQuestionsGenerated,
+    userStatus,
 }: {
     onQuestionsGenerated: (questions: string[], applicantName: string, companyName: string, positionApplied: string, resumeText: string, companyDescription: string) => void;
+    userStatus: { tier: string; credits: number; limit: number } | null;
 }) {
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -49,7 +51,6 @@ export default function ResumeUpload({
             formData.append("companyDescription", companyDescription);
             formData.append("positionApplied", positionApplied);
 
-            // We will create this API route next
             const res = await fetch("/api/parse-resume", {
                 method: "POST",
                 body: formData,
@@ -82,18 +83,60 @@ export default function ResumeUpload({
         }
     };
 
+    const isLimitReached = userStatus && userStatus.credits <= 0;
+    const isPremium = userStatus?.tier === "PREMIUM";
+
     return (
         <div className="bg-white/5 border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden group hover:border-indigo-500/50 transition-colors w-full">
+            {/* Background decorative blob */}
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-[60px] pointer-events-none" />
+
             <div className="flex flex-col items-center justify-center text-center">
-                {!file ? (
-                    <>
-                        <div className="w-16 h-16 rounded-full bg-indigo-500/20 flex items-center justify-center mb-6 text-indigo-400">
-                            <UploadCloud className="w-8 h-8" />
+                {isLimitReached ? (
+                    <div className="py-6 flex flex-col items-center">
+                        <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mb-6 ring-1 ring-red-500/30 group-hover:scale-110 transition-transform duration-500">
+                            <UploadCloud className="w-10 h-10 text-red-400" />
+                            <div className="absolute inset-0 rounded-full border-2 border-red-500/20 animate-pulse" />
                         </div>
-                        <h3 className="text-2xl font-semibold text-white mb-2">Upload your Resume</h3>
-                        <p className="text-slate-400 mb-8">PDF format, max 5MB</p>
-                        <label className="relative cursor-pointer bg-white text-slate-900 px-8 py-3 rounded-full font-semibold hover:bg-indigo-50 transition-colors shadow-lg shadow-white/10">
-                            <span>Choose File</span>
+
+                        <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-3 tracking-tight">
+                            {isPremium ? "Credit Limit Reached" : "Free Plan Exhausted"}
+                        </h3>
+
+                        <p className="text-slate-400 mb-8 max-w-sm leading-relaxed text-sm sm:text-base text-center">
+                            {isPremium
+                                ? "You've used all 5 of your Pro interviews for this cycle. Renew your subscription to get 5 more instant credits!"
+                                : "You've successfully completed your 2 free interviews! Upgrade to Pro to unlock unlimited interviews and full career analytics."
+                            }
+                        </p>
+
+                        <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                            <a
+                                href="/pricing"
+                                className="px-8 py-3.5 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 hover:scale-[1.03] active:scale-95 text-sm sm:text-base"
+                            >
+                                <span>{isPremium ? "Get More Credits" : "Upgrade to Pro"}</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </a>
+                            <a
+                                href="/dashboard"
+                                className="px-8 py-3.5 rounded-full font-semibold border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 transition-all active:scale-95 text-sm sm:text-base"
+                            >
+                                View History
+                            </a>
+                        </div>
+                    </div>
+                ) : !file ? (
+                    <>
+                        <div className="w-20 h-20 rounded-full bg-indigo-500/20 flex items-center justify-center mb-6 text-indigo-400 group-hover:scale-110 transition-transform duration-500 ring-1 ring-indigo-500/20">
+                            <UploadCloud className="w-10 h-10" />
+                        </div>
+                        <h3 className="text-2xl sm:text-3xl font-bold text-white mb-2 tracking-tight">Ready to Practice?</h3>
+                        <p className="text-slate-400 mb-8 text-sm sm:text-base">Upload your resume (PDF) to start your AI interview</p>
+                        <label className="relative cursor-pointer bg-white text-slate-900 px-10 py-4 rounded-full font-bold hover:bg-indigo-50 transition-all shadow-xl shadow-white/5 hover:scale-105 active:scale-95">
+                            <span>Choose Resume</span>
                             <input
                                 type="file"
                                 className="hidden"
@@ -101,54 +144,58 @@ export default function ResumeUpload({
                                 onChange={handleFileChange}
                             />
                         </label>
+                        <p className="mt-6 text-slate-500 text-xs">Professional parsing & instant generation</p>
                     </>
                 ) : (
                     <>
-                        <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-6 text-green-400">
+                        <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mb-6 text-green-400 ring-1 ring-green-500/30">
                             <FileText className="w-8 h-8" />
                         </div>
-                        <h3 className="text-xl font-semibold text-white mb-2">{file.name}</h3>
-                        <p className="text-slate-400 mb-8 text-sm">Ready to analyze</p>
+                        <h3 className="text-xl font-bold text-white mb-2 leading-tight">{file.name}</h3>
+                        <p className="text-emerald-400 font-medium mb-8 text-sm flex items-center gap-1.5 justify-center">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            Document analyzed & ready
+                        </p>
 
-                        <div className="w-full max-w-sm flex flex-col gap-4 text-left mb-8">
-                            <div>
-                                <label className="block text-sm text-slate-400 mb-1">Your First Name</label>
-                                <input type="text" value={applicantName} onChange={(e) => setApplicantName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" placeholder="e.g. John/Jane" required />
+                        <div className="w-full max-w-sm flex flex-col gap-5 text-left mb-10 mx-auto">
+                            <div className="group/input">
+                                <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 group-focus-within/input:text-indigo-400 transition-colors">Your First Name</label>
+                                <input type="text" value={applicantName} onChange={(e) => setApplicantName(e.target.value)} className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all text-sm sm:text-base" placeholder="e.g. John" required />
                             </div>
-                            <div>
-                                <label className="block text-sm text-slate-400 mb-1">Company/Institution Applying To</label>
-                                <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" placeholder="e.g. IEBC/UN" required />
+                            <div className="group/input">
+                                <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 group-focus-within/input:text-indigo-400 transition-colors">Target Company</label>
+                                <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all text-sm sm:text-base" placeholder="e.g. Google / Safaricom" required />
                             </div>
-                            <div>
-                                <label className="block text-sm text-slate-400 mb-1">Position Applied For</label>
-                                <input type="text" value={positionApplied} onChange={(e) => setPositionApplied(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" placeholder="e.g. IT Professional" required />
+                            <div className="group/input">
+                                <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 group-focus-within/input:text-indigo-400 transition-colors">Target Position</label>
+                                <input type="text" value={positionApplied} onChange={(e) => setPositionApplied(e.target.value)} className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all text-sm sm:text-base" placeholder="e.g. Software Engineer" required />
                             </div>
-                            <div>
-                                <label className="block text-sm text-slate-400 mb-1">Brief description of the job roles/role applying for</label>
-                                <textarea value={companyDescription} onChange={(e) => setCompanyDescription(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 h-24 resize-none" placeholder="e.g. Set-up, configure and operate ICT equipments....." required />
+                            <div className="group/input">
+                                <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-2 group-focus-within/input:text-indigo-400 transition-colors">Job Description Snippet</label>
+                                <textarea value={companyDescription} onChange={(e) => setCompanyDescription(e.target.value)} className="w-full bg-slate-900/50 border border-slate-800 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/5 transition-all h-28 resize-none text-sm sm:text-base" placeholder="Paste the key roles or requirements here..." required />
                             </div>
                         </div>
 
                         <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 w-full justify-center">
                             <button
                                 onClick={() => setFile(null)}
-                                className="w-full sm:w-auto px-6 py-3 sm:py-3.5 rounded-xl sm:rounded-full font-semibold border border-white/20 text-white hover:bg-white/10 transition-colors active:scale-95"
+                                className="w-full sm:w-auto px-8 py-3.5 rounded-full font-semibold border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 transition-all active:scale-95 text-sm sm:text-base"
                                 disabled={isUploading}
                             >
-                                Cancel
+                                Reset
                             </button>
                             <button
                                 onClick={handleUpload}
                                 disabled={isUploading}
-                                className="w-full sm:w-auto px-8 py-3 sm:py-3.5 rounded-xl sm:rounded-full font-semibold bg-indigo-600 text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                                className="w-full sm:w-auto px-10 py-3.5 rounded-full font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95 text-sm sm:text-base"
                             >
                                 {isUploading ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin shrink-0" />
-                                        <span>Analyzing...</span>
+                                        <span>Designing Tasks...</span>
                                     </>
                                 ) : (
-                                    "Start Interview"
+                                    "Launch Interview"
                                 )}
                             </button>
                         </div>
@@ -157,9 +204,10 @@ export default function ResumeUpload({
             </div>
 
             {error && (
-                <p className="text-red-400 mt-4 text-center text-sm bg-red-400/10 py-2 rounded-lg">
-                    {error}
-                </p>
+                <div className="mt-8 flex items-center gap-3 bg-red-500/10 border border-red-500/20 p-4 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                    <p className="text-red-400 text-sm font-medium">{error}</p>
+                </div>
             )}
         </div>
     );

@@ -370,6 +370,7 @@ export default function Home() {
                           </div>
                         )}
                         <ResumeUpload
+                          userStatus={userStatus}
                           onQuestionsGenerated={(generatedQuestions: string[], name: string, compName: string, posApplied: string, resumeTxt: string, compDesc: string) => {
                             setQuestions(generatedQuestions);
                             setApplicantName(name);
