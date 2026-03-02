@@ -144,15 +144,13 @@ export default async function DashboardPage() {
 
           {/* Right Main Panel (Interview History) */}
           <div className="lg:col-span-9 flex flex-col">
-            {/* Progress Analytics Section */}
-            <ProgressTracker interviews={interviews} isPremium={user?.tier === "PREMIUM"} />
-
             <div className="flex items-center gap-3 mb-8">
               <LayoutDashboard className="w-7 h-7 text-teal-400" />
               <h2 className="text-2xl font-bold text-white">
                 Your Interview History
               </h2>
             </div>
+
 
             {/* Existing History Grid */}
             {interviews.length === 0 ? (
@@ -233,6 +231,11 @@ export default async function DashboardPage() {
                 })}
               </div>
             )}
+
+            {/* Progress Analytics Section (moved after history) */}
+            <div className="mt-16">
+              <ProgressTracker interviews={interviews} isPremium={user?.tier === "PREMIUM"} />
+            </div>
           </div>
         </div>
       </div>
