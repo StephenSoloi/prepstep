@@ -333,8 +333,8 @@ export default function Home() {
                       </motion.span>
                       {" "}
                       <motion.span
-                        animate={{ y: [0, -4, 0] }}
-                        transition={{ delay: 1.0, duration: 0.4, type: "spring", stiffness: 300 }}
+                        animate={{ y: [0, -6, 0] }}
+                        transition={{ delay: 1.0, duration: 0.45, ease: "easeOut" }}
                         style={{ display: "inline-block" }}
                         className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-blue-300 to-indigo-400"
                       >
