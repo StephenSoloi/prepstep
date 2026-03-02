@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -14,8 +12,18 @@ import {
 import { TrendingUp, Award, Target, Rocket, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 
+interface InterviewSession {
+  id: string;
+  createdAt: string | Date;
+  feedback: {
+    metrics?: {
+      overallScore?: number;
+    };
+  } | null | any;
+}
+
 interface ProgressTrackerProps {
-  interviews: any[];
+  interviews: any[]; // Kept as array but internal map will be typed
   isPremium: boolean;
 }
 
@@ -26,7 +34,7 @@ export default function ProgressTracker({ interviews, isPremium }: ProgressTrack
   // Process data for the chart (oldest to newest)
   const chartData = [...interviews]
     .reverse()
-    .map((session, index) => {
+    .map((session: InterviewSession, index: number) => {
       const fb = session.feedback as any;
       return {
         name: `Int ${index + 1}`,
