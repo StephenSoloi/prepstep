@@ -24,6 +24,13 @@ Please carefully review the following interview transcript.
 CRITICAL INSTRUCTION: Return ONLY a valid JSON object matching this EXACT structure (no markdown, no code blocks, no extra text):
 {
     "summary": "A 2-3 sentence overall summary of how the interviewee performed.",
+    "metrics": {
+       "overallScore": 0-100,
+       "confidence": 0-100,
+       "technicalPrecision": 0-100,
+       "starMethodAlignment": 0-100,
+       "clarityConciseness": 0-100
+    },
     "improvingPoints": ["General improvement point 1", "General improvement point 2", "General improvement point 3"],
     "qaBreakdown": [
     {
@@ -33,6 +40,13 @@ CRITICAL INSTRUCTION: Return ONLY a valid JSON object matching this EXACT struct
     }
     ]
 }
+
+For the metrics:
+- overallScore: An overall readiness percentage.
+- confidence: Based on the candidate's flow and professional tone.
+- technicalPrecision: Depth and accuracy of the answers to specific skills mentioned in the resume.
+- starMethodAlignment: How well they structured their behavioral responses.
+- clarityConciseness: Ability to get to the point without rambling.
 
 For the qaBreakdown array:
 - Only include question-answer pairs where the candidate actually gave a spoken answer (skip unanswered questions).

@@ -13,6 +13,7 @@ import {
   UserCircle2,
 } from "lucide-react";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import ProgressTracker from "@/components/ProgressTracker";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -149,6 +150,10 @@ export default async function DashboardPage() {
               </h2>
             </div>
 
+            {/* Progress Analytics Section */}
+            <ProgressTracker interviews={interviews} isPremium={user?.tier === "PREMIUM"} />
+
+            {/* Existing History Grid */}
             {interviews.length === 0 ? (
               <div className="bg-white/5 border border-white/10 rounded-3xl p-12 text-center backdrop-blur-sm flex flex-col items-center">
                 <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-6 shadow-inner">

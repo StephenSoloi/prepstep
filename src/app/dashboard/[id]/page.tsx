@@ -10,6 +10,7 @@ import {
   Calendar,
   Building2,
   Lock,
+  Sparkles,
 } from "lucide-react";
 import ShareButton from "@/components/ShareButton";
 
@@ -89,6 +90,32 @@ export default async function InterviewDetailPage({
             </div>
           </div>
 
+          {/* Performance Metrics for PRO users */}
+          {session.user.tier === "PREMIUM" && feedback?.metrics && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="bg-indigo-600/10 border border-indigo-500/20 rounded-2xl p-4 text-center">
+                <p className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest mb-1">Overall</p>
+                <p className="text-2xl font-black text-white">{feedback.metrics.overallScore}%</p>
+              </div>
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-center">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Confidence</p>
+                <p className="text-xl font-bold text-white">{feedback.metrics.confidence}%</p>
+              </div>
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-center">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Technical</p>
+                <p className="text-xl font-bold text-white">{feedback.metrics.technicalPrecision}%</p>
+              </div>
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-center">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">STAR Method</p>
+                <p className="text-xl font-bold text-white">{feedback.metrics.starMethodAlignment}%</p>
+              </div>
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 text-center col-span-2 md:col-span-1">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Clarity</p>
+                <p className="text-xl font-bold text-white">{feedback.metrics.clarityConciseness}%</p>
+              </div>
+            </div>
+          )}
+
           {/* Breakdown Section */}
           {feedback?.qaBreakdown && feedback.qaBreakdown.length > 0 && (
             <div className="bg-slate-900/50 rounded-xl sm:rounded-2xl p-5 sm:p-8 border border-slate-800 relative">
@@ -96,7 +123,7 @@ export default async function InterviewDetailPage({
                 <CheckCircle className="w-5 h-5 text-amber-400" /> Question
                 Breakdown
               </h3>
-              
+
               <div className="relative">
                 <div className={`space-y-6 ${session.user.tier === "FREE" ? "blur-sm select-none opacity-40" : ""}`}>
                   {/* Show only first question for FREE tier, all for PREMIUM */}
@@ -141,7 +168,7 @@ export default async function InterviewDetailPage({
                 {session.user.tier === "FREE" && (
                   <div className="absolute inset-x-0 -bottom-8 -top-8 flex flex-col items-center justify-center text-center z-20">
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/20 to-slate-950 pointer-events-none" />
-                    
+
                     <div className="relative bg-slate-900/60 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-white/10 max-w-lg mx-4 shadow-2xl">
                       <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mb-6 mx-auto">
                         <Lock className="w-8 h-8 text-indigo-400" />
