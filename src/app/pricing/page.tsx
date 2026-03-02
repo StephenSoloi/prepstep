@@ -12,7 +12,13 @@ export default function PricingPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const handlePayment = async () => {
-    // Sanitize: Remove spaces and anything not a digit
+    // Strict Sanitization/Validation: Check if raw input has spaces or illegal characters
+    if (/\s/.test(phone)) {
+      setErrorMsg("Please enter the number without any spaces.");
+      return;
+    }
+
+    // Sanitize: Remove anything not a digit
     const cleanPhone = phone.replace(/\D/g, "");
 
     // Validate Kenyan format: 
@@ -22,7 +28,7 @@ export default function PricingPage() {
     const isIntl = cleanPhone.length === 12 && (cleanPhone.startsWith("2547") || cleanPhone.startsWith("2541"));
 
     if (!isLocal && !isIntl) {
-      setErrorMsg("Please enter a valid Kenyan number (e.g. 07XXXXXXXX or 254XXXXXXXX)");
+      setErrorMsg("Please enter a valid Kenyan number (e.g. 07XXXXXXXX or 01XXXXXXXX)");
       return;
     }
 

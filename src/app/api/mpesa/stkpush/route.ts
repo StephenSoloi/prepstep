@@ -93,12 +93,17 @@ export async function POST(req: Request) {
             body: JSON.stringify(stkBody),
         });
 
+        // Get raw text first to avoid double-consumption of stream
+        const stkText = await stkRes.text();
         let stkData;
         try {
-            stkData = await stkRes.json();
+            stkData = JSON.parse(stkText);
         } catch (e) {
-            console.error('Failed to parse STK response:', e);
-            return NextResponse.json({ error: 'Invalid response from M-Pesa' }, { status: 500 });
+            console.error('Failed to parse STK response as JSON. Raw response:', stkText);
+            return NextResponse.json({
+                error: 'Invalid response format from M-Pesa. This usually means the request was rejected at a low level.',
+                details: stkText.substring(0, 200)
+            }, { status: 500 });
         }
 
         if (!stkRes.ok || stkData.errorMessage || stkData.errorCode) {
