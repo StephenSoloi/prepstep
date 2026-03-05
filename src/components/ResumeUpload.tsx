@@ -45,45 +45,69 @@ export default function ResumeUpload({
         setIsUploading(true);
         setError("");
 
-        try {
-            const formData = new FormData();
-            formData.append("resume", file);
-            formData.append("companyName", companyName);
-            formData.append("companyDescription", companyDescription);
-            formData.append("positionApplied", positionApplied);
+        const MAX_RETRIES = 2;
+        let lastError: Error | null = null;
 
-            const res = await fetch("/api/parse-resume", {
-                method: "POST",
-                body: formData,
-            });
-
-            if (!res.ok) {
-                const text = await res.text();
-                let errorMsg = "Failed to process resume";
-                try {
-                    const parsed = JSON.parse(text);
-                    if (parsed.error) {
-                        errorMsg = parsed.error;
-                        console.error("API Error:", errorMsg);
-                    } else {
-                        console.error("Server returned an error:", res.status, text);
-                    }
-                } catch {
-                    errorMsg = `Server Error (${res.status}): ${text.substring(0, 100)}...`;
-                    console.error("Raw Server Error:", text);
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                if (attempt > 0) {
+                    // Brief wait before retrying (cold start warmup)
+                    await new Promise(res => setTimeout(res, 2000));
                 }
-                throw new Error(errorMsg);
-            }
 
-            const data = await res.json();
-            if (data.questions && data.questions.length > 0) {
-                onQuestionsGenerated(data.questions, applicantName, companyName, positionApplied, data.resumeText || "", companyDescription);
-            } else {
-                throw new Error("No questions could be generated.");
+                const formData = new FormData();
+                formData.append("resume", file);
+                formData.append("companyName", companyName);
+                formData.append("companyDescription", companyDescription);
+                formData.append("positionApplied", positionApplied);
+
+                const res = await fetch("/api/parse-resume", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!res.ok) {
+                    const text = await res.text();
+                    let errorMsg = "Failed to process resume";
+                    try {
+                        const parsed = JSON.parse(text);
+                        if (parsed.error) {
+                            errorMsg = parsed.error;
+                            console.error("API Error:", errorMsg);
+                        } else {
+                            console.error("Server returned an error:", res.status, text);
+                        }
+                    } catch {
+                        errorMsg = `Server Error (${res.status}): ${text.substring(0, 100)}...`;
+                        console.error("Raw Server Error:", text);
+                    }
+                    throw new Error(errorMsg);
+                }
+
+                const data = await res.json();
+                if (data.questions && data.questions.length > 0) {
+                    onQuestionsGenerated(data.questions, applicantName, companyName, positionApplied, data.resumeText || "", companyDescription);
+                    return; // success — exit the loop and the function
+                } else {
+                    throw new Error("No questions could be generated.");
+                }
+
+            } catch (err: unknown) {
+                lastError = err instanceof Error ? err : new Error("An error occurred.");
+                const isNetworkError = lastError.message === "Failed to fetch" || lastError.message.includes("fetch");
+
+                // Only retry on network-level errors (cold start), not API errors
+                if (!isNetworkError || attempt === MAX_RETRIES) {
+                    break; // Exit loop if not a network error or if max retries reached
+                }
+                // else: loop will retry
             }
-        } catch (err: unknown) {
-            console.error(err);
-            const msg = err instanceof Error ? err.message : "An error occurred.";
+        }
+
+        // All attempts failed or a non-retryable error occurred
+        if (lastError) {
+            console.error(lastError);
+            const msg = lastError.message;
             setError(msg);
 
             // Scroll to error message on mobile or if out of view
@@ -93,9 +117,9 @@ export default function ResumeUpload({
                     errorElement.scrollIntoView({ behavior: "smooth", block: "center" });
                 }
             }, 100);
-        } finally {
-            setIsUploading(false);
         }
+
+        setIsUploading(false);
     };
 
     const isLimitReached = userStatus && userStatus.credits <= 0;
