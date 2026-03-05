@@ -1,36 +1,139 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🔨 PrepStep — AI-Powered Mock Interviewer
 
-## Getting Started
+**PrepStep** is a high-performance, voice-first AI platform designed to help job seekers nail their next interview. By combining instant resume parsing with real-time voice-to-voice interaction, PrepStep offers a realistic and low-stress environment for candidates to practice and refine their communication skills.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🚀 Key Features
+
+### 📄 Intelligent Resume Parsing
+*   **Gemini-Powered Extraction**: Uses Gemini (Flash 1.5/2.0) to instantly extract skills, education, and career history from PDF uploads.
+*   **Integrity Gatekeeper**: Automatically validates if the uploaded document is a genuine resume/CV, rejecting recipes, technical metadata, or gibberish with friendly user feedback.
+*   **Low-Barrier Entry**: Supports everything from professional executive CVs to a beginner's first resume draft.
+
+### 🎙️ Real-Time Voice Interviewing
+*   **Voice-to-Voice Interaction**: Seamless real-time conversation using the **Vapi AI** infrastructure.
+*   **Realistic Latency**: Sub-500ms response times for a feedback loop that feels natural and lifelike.
+*   **Context-Aware Questioning**: AI interviewers reference your specific job history and target company (e.g., Safaricom, Google) to ask tailored questions.
+
+### 📊 Comprehensive Performance Reports
+*   **STAR Method Alignment**: Feedback is categorized based on the Situation, Task, Action, and Result framework.
+*   **Metric Breakdown**: Get scored on confidence, technical precision, clarity, and overall readiness.
+*   **Suggested Answers**: See model answers for every question asked during the session to understand where you can improve.
+
+### 💳 Tiered access & Payments
+*   **Credit System**: New users start with 2 free interview credits.
+*   **Clerk Authentication**: Secure login and session management.
+*   **M-Pesa Integration**: Seamless local payment processing for "Pro" tier upgrades.
+
+---
+
+## 🏎️ Core Workflow
+
+```mermaid
+graph TD
+    A[User Uploads Resume] --> B{AI Validation}
+    B -- Not a Resume --> C[Friendly Error Alert]
+    B -- Valid Resume --> D[AI Generates Questions]
+    D --> E[Real-Time Voice Interview]
+    E --> F[Session Ends]
+    F --> G[AI Transcribes & Analyzes]
+    G --> H[Personalized Feedback Report]
+    H --> I[Saved to Dashboard]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Technology Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Layer | Technology |
+| :--- | :--- |
+| **Framework** | [Next.js 15+](https://nextjs.org/) (App Router, Server Actions) |
+| **Styling** | [Tailwind CSS 4](https://tailwindcss.com/) & [Framer Motion](https://www.framer.com/motion/) |
+| **Authentication** | [Clerk](https://clerk.com/) |
+| **AI (Logic)** | [Google Gemini 1.5 Flash](https://aistudio.google.com/) (Parsing & Feedback) |
+| **AI (Voice)** | [Vapi SDK](https://vapi.ai/) |
+| **Database** | [Prisma ORM](https://www.prisma.io/) with PostgreSQL |
+| **Deployment** | [Vercel](https://vercel.com/) |
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📂 Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```text
+prepstep/
+├── prisma/                 # Database schema and migrations
+├── src/
+│   ├── app/                # Next.js App Router (Pages & API Routes)
+│   │   ├── api/            # API endpoints (Resume parsing, Feedback gen, User status)
+│   │   ├── dashboard/      # User interview history
+│   │   └── pricing/        # Subscription and payment UI
+│   ├── components/         # Reusable UI components (Navbar, Upload, Interview Logic)
+│   └── lib/                # Utility functions (Prisma client, Helper tools)
+├── public/                 # Static assets
+└── package.json            # Dependencies and scripts
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🚦 Getting Started
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Prerequisites
+*   Node.js (v18+)
+*   PostgreSQL Database
+*   API Keys: Clerk, Gemini (Google AI Studio), Vapi.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Installation
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/StephenSoloi/prepstep.git
+    cd prepstep
+    ```
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Setup Environment Variables**:
+    Create a `.env.local` file in the root directory:
+    ```bash
+    # Database
+    DATABASE_URL="your_postgresql_url"
+    DIRECT_URL="your_direct_postgresql_url"
+
+    # Authentication
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+    CLERK_SECRET_KEY=...
+
+    # AI
+    GEMINI_API_KEY="your_google_ai_studio_key"
+    VAPI_API_KEY="..."
+    ```
+
+4.  **Database Migration**:
+    ```bash
+    npx prisma generate
+    npx prisma db push
+    ```
+
+5.  **Run Locally**:
+    ```bash
+    npm run dev
+    ```
+
+---
+
+## 🔄 Recent Updates
+
+### Gemini 1.5 Migration (March 2026)
+*   Deprecated Groq/Llama in favor of **Gemini 1.5 Flash**.
+*   Implemented **JSON Output Mode** for high-reliability parsing without regex cleaning.
+*   Added **Intelligent Document Validation** to the `parse-resume` API to prevent non-resume uploads.
+*   Modernized the **Error Alert UI** with responsive glassmorphism designs for mobile-first accessibility.
+
+---
+
+## 📜 License
+This project is private and owned by Stephen Soloi. All rights reserved.
