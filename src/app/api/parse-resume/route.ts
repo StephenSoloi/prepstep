@@ -140,7 +140,7 @@ NOTE: A resume can be very simple, unprofessional, or for a complete beginner—
 
 If the document is clearly NOT a resume (e.g., it is a grocery list, a recipe, a book chapter, random sentences, or just gibberish), set "isResume" to false and provide a friendly, concise feedback message in "error" (e.g., "It looks like you've uploaded a [detected type] instead of a resume. Please upload a CV showing your experience or education to continue."). Avoid technical jargon.
 
-If it IS a resume, set "isResume" to true, set "error" to null, extract the candidate's full name, and generate exactly 4 highly relevant interview questions tailored to their background and the Job Context below.
+If it IS a resume, set "isResume" to true, set "error" to null, extract the candidate's full name, and generate exactly 5 highly relevant interview questions tailored to their background and the Job Context below.
 
 Job Context:
 - Company: ${companyName}
@@ -152,6 +152,7 @@ QUESTION REQUIREMENTS:
 2. Include at least one question about how they will contribute to ${companyName} as a ${positionApplied}.
 3. Include at least one scenario/behavioral question.
 4. Reference their actual experience from the resume.
+5. The 5th question MUST be a general, sensible, and relevant "up-to-date" question related to their field or the job (e.g., about a recent trend, a common tool, or a basic industry standard) that is easy to answer but shows they are current.
 
 OUTPUT FORMAT:
 Return a JSON object with this EXACT structure:
@@ -159,7 +160,7 @@ Return a JSON object with this EXACT structure:
   "isResume": boolean,
   "error": "Feedback message if isResume is false, otherwise null",
   "name": "Full Name",
-  "questions": ["Question 1", "Question 2", "Question 3", "Question 4"]
+  "questions": ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
 }
 
 DOCUMENT TEXT:

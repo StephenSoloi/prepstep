@@ -44,6 +44,36 @@ graph TD
 
 ---
 
+## ⚙️ How It Works (The Mechanics)
+
+### 1. Account Creation & Security
+PrepStep leverages **Clerk** for enterprise-grade authentication. Upon first sign-in, the system automatically checks our PostgreSQL database via **Prisma** to see if a user record exists; if not, it initializes a new profile and grants **2 complimentary interview credits** to start their journey.
+
+### 2. Intelligent Content Extraction
+When a user drops a PDF:
+*   **PDF Tokenization**: Our backend uses a specialized parser to extract raw text blocks from the binary PDF stream.
+*   **Gemini Extraction**: This raw text is sent to **Gemini 1.5 Flash**. The AI performs a "Structural Analysis" to identify Name, Skills, Summary, and Experience.
+*   **Gatekeeping**: Gemini is instructed to validate the document type. If it's a grocery list or technical metadata, it rejects the file and provides a friendly explanation instead of hallucinating results.
+
+### 3. Smart Question Generation
+If the resume is valid, the AI generates exactly **5 High-Impact Questions**:
+1.  **The Hook**: "Tell us about yourself" (Standard Icebreaker).
+2.  **The Fit**: How the candidate contributes specifically to the Target Company.
+3.  **The Behavior**: A scenario-based question matching their specific technical level.
+4.  **The Depth**: A targeted inquiry into a standout project or role mentioned in the resume.
+5.  **The Horizon**: A general "up-to-date" question about recent trends or industry standards in their field to test their current awareness.
+
+### 4. Real-Time Voice Intelligence (Vapi)
+Once questions are ready, we initialize a **Vapi AI Session**:
+*   **Speech-to-Text (STT)**: Vapi listens to the user's microphone with high accuracy.
+*   **Natural Conversation**: Vapi acts as the "Voice Bridge," managing the flow of the interview, handling interruptions, and maintaining a lifelike rhythm.
+*   **Low Latency**: It utilizes optimized WebRTC channels to ensure there is no awkward "computing" pause between the user's answer and the AI's next response.
+
+### 5. Persistent Data & Feedback
+After the interview, the entire **Transcript** is sent back to Gemini for a "STAR Method Review." All results—including the transcript, suggested better answers, and performance metrics—are stored in **PostgreSQL**. This allow users to visit their **Dashboard** any time to track progress and see how they are improving over time.
+
+---
+
 ## 🛠️ Technology Stack
 
 | Layer | Technology |
@@ -132,6 +162,35 @@ prepstep/
 *   Implemented **JSON Output Mode** for high-reliability parsing without regex cleaning.
 *   Added **Intelligent Document Validation** to the `parse-resume` API to prevent non-resume uploads.
 *   Modernized the **Error Alert UI** with responsive glassmorphism designs for mobile-first accessibility.
+
+---
+
+## 🎓 KCA University Presentation Pitch
+
+> "Empowering the next generation of professionals through AI-driven confidence."
+
+### The Problem
+In today's competitive job market, academic excellence (GPA) is no longer enough. Many brilliant students from institutions like **KCA University** fail to secure roles not because they lack skills, but because they lack **Interview Confidence**. Private coaching is expensive, and static "tip lists" don't provide the pressure of a real conversation.
+
+### The Solution: PrepStep
+PrepStep acts as a **24/7 Personal Career Coach**. It provides a safe, private space for students to stumble, learn, and iterate. 
+*   **Accessibility**: Works on any mobile phone or laptop.
+*   **Contextual**: It doesn't ask generic questions; it asks questions about *your* experience and *your* target role.
+*   **Localized Payments**: Integration with **M-Pesa** ensures that Kenyan students can easily access premium features without needing a credit card.
+
+### Potential Stakeholder Q&A
+
+**Q: How do we know the AI isn't just "making up" industry standards?**
+*   **A**: PrepStep utilizes the **Gemini 1.5** model, which is trained on vast datasets of professional corporate standards, technical documentation, and behavioral interviewing frameworks like the STAR method.
+
+**Q: Is student data safe? Are resumes sold?**
+*   **A**: Absolutely not. We use **Clerk** for identity protection and **Surgical Data Handling** where resumes are used only for the active session. We prioritize data integrity and do not use personal data to train public models.
+
+**Q: How can this scale to thousands of students at once?**
+*   **A**: The architecture is **Serverless (Vercel)** and **API-First (Gemini/Vapi)**. This means the system can handle 10 or 10,000 concurrent interviews without needing a massive physical server farm.
+
+**Q: Why should an organization fund PrepStep?**
+*   **A**: Because you aren't just funding an app; you are funding **Employability**. Increasing the successful placement rate of graduates directly boosts the reputation of the institution and the economic strength of the local industry.
 
 ---
 
