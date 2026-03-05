@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
-
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse");
+import { extractText } from "unpdf";
 
 export const maxDuration = 60; // Allow 60s for cold starts and LLM response
 export const runtime = "nodejs";
@@ -49,11 +47,11 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 2. Extract text using standard pdf-parse to support compressed PDFs
+        // 2. Extract text using unpdf (modern, lightweight, avoids url.parse issues)
         let extractedText = "";
         try {
-            const data = await pdfParse(buffer);
-            extractedText = data.text;
+            const { text } = await extractText(buffer, { mergePages: true });
+            extractedText = text;
         } catch (parseError) {
             console.error("PDF Parsing Error:", parseError);
             return NextResponse.json(
