@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Groq from "groq-sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
@@ -16,12 +16,16 @@ export async function POST(req: NextRequest) {
 
         const transcriptText = transcript.map((t: { role: string; text: string }) => `${t.role.toUpperCase()}: ${t.text}`).join("\n");
 
-        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+        const model = genAI.getGenerativeModel({
+            model: "gemini-flash-latest",
+            generationConfig: { responseMimeType: "application/json" }
+        });
 
         const prompt = `You are an expert technical and behavioral interview coach.
 Please carefully review the following interview transcript.
 
-CRITICAL INSTRUCTION: Return ONLY a valid JSON object matching this EXACT structure (no markdown, no code blocks, no extra text):
+CRITICAL INSTRUCTION: Return a valid JSON object matching this EXACT structure:
 {
     "summary": "A 2-3 sentence overall summary of how the interviewee performed.",
     "metrics": {
@@ -57,31 +61,16 @@ For the qaBreakdown array:
 TRANSCRIPT:
 ${transcriptText.substring(0, 28000)}`;
 
-        const completion = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.5,
-            max_tokens: 4096,
-        });
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
 
-        const responseText = completion.choices[0]?.message?.content || "";
         if (!responseText) {
             throw new Error("No response from AI.");
         }
 
         let feedback;
         try {
-            // Strip markdown formatting if Groq wrapped it
-            let cleaned = responseText.trim();
-            cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-
-            const startIdx = cleaned.indexOf("{");
-            const endIdx = cleaned.lastIndexOf("}");
-            if (startIdx !== -1 && endIdx !== -1 && endIdx >= startIdx) {
-                feedback = JSON.parse(cleaned.substring(startIdx, endIdx + 1));
-            } else {
-                throw new Error("Could not parse feedback");
-            }
+            feedback = JSON.parse(responseText.trim());
         } catch (e) {
             console.error("JSON parse error:", responseText, e);
             throw new Error("Failed to parse feedback from the AI model.");
@@ -163,7 +152,7 @@ ${transcriptText.substring(0, 28000)}`;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const err = error as any;
 
-        // Handle Groq Quota/Rate Limit Errors
+        // Handle Quota/Rate Limit Errors
         if (err.message?.includes("RESOURCE_EXHAUSTED") || err.status === "RESOURCE_EXHAUSTED" || err.code === 429) {
             return NextResponse.json(
                 { error: "AI service is currently busy (Rate Limit reached). Please wait 60 seconds and try again." },

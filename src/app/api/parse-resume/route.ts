@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Groq from "groq-sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
@@ -126,77 +126,74 @@ export async function POST(req: NextRequest) {
         // Truncate to avoid excessive tokens
         const resumeSnippet = extractedText.substring(0, 12000);
 
-        // 3. Call Groq
-        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
+        // 3. Call Gemini
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+        const model = genAI.getGenerativeModel({
+            model: "gemini-flash-latest",
+            generationConfig: { responseMimeType: "application/json" }
+        });
 
-        const prompt = `You are an expert technical and behavioral interviewer for top companies.
+        const prompt = `You are an expert technical and behavioral interviewer.
+        
+First, analyze the provided DOCUMENT TEXT to determine if it is a resume or CV. 
+NOTE: A resume can be very simple, unprofessional, or for a complete beginner—that is okay. As long as it attempts to list a person's name, education, skills, or experience, consider it a resume.
+
+If the document is clearly NOT a resume (e.g., it is a grocery list, a recipe, a book chapter, random sentences, or just gibberish), set "isResume" to false and provide a friendly, concise feedback message in "error" (e.g., "It looks like you've uploaded a [detected type] instead of a resume. Please upload a CV showing your experience or education to continue."). Avoid technical jargon.
+
+If it IS a resume, set "isResume" to true, set "error" to null, extract the candidate's full name, and generate exactly 4 highly relevant interview questions tailored to their background and the Job Context below.
 
 Job Context:
 - Company: ${companyName}
 - Position Applied For: ${positionApplied}
 - Company Description: ${companyDescription}
 
-Carefully read the candidate's resume below. Extract their full name. Then generate exactly 4 highly relevant interview questions tailored to their background and this specific role.
-
 QUESTION REQUIREMENTS:
-1. First question MUST be "Tell us about yourself." — this is standard in every real interview.
+1. First question MUST be "Tell us about yourself."
 2. Include at least one question about how they will contribute to ${companyName} as a ${positionApplied}.
-3. Include at least one scenario/behavioral question (e.g. how they handle a specific challenge relevant to the role).
-4. Make all questions specific to the candidate's actual experience — reference their schools, jobs, or skills where appropriate.
+3. Include at least one scenario/behavioral question.
+4. Reference their actual experience from the resume.
 
-OUTPUT FORMAT — CRITICAL:
-Return ONLY a raw JSON object. No markdown, no code fences, no backticks, no explanation text. Just the JSON:
-{"name":"Actual Candidate Name","questions":["Tell us about yourself.","Question 2?","Question 3?","Question 4?"]}
+OUTPUT FORMAT:
+Return a JSON object with this EXACT structure:
+{
+  "isResume": boolean,
+  "error": "Feedback message if isResume is false, otherwise null",
+  "name": "Full Name",
+  "questions": ["Question 1", "Question 2", "Question 3", "Question 4"]
+}
 
-RESUME:
+DOCUMENT TEXT:
 ${resumeSnippet}`;
 
-        const completion = await groq.chat.completions.create({
-            model: "llama-3.3-70b-versatile",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.7,
-            max_tokens: 1024,
-        });
+        const result = await model.generateContent(prompt);
+        const responseText = result.response.text();
 
-        const responseText = completion.choices[0]?.message?.content || "";
         if (!responseText) throw new Error("AI returned an empty response.");
 
-        console.log("Groq raw response:", responseText.substring(0, 500));
+        // 4. Parse Gemini JSON response
+        const parsed = JSON.parse(responseText.trim());
 
-        // 4. Parse Groq JSON response
+        // Check if the AI identified this as a non-resume
+        if (parsed.isResume === false) {
+            return NextResponse.json(
+                { error: parsed.error || "The uploaded document does not appear to be a resume. Please upload a valid CV to start the interview." },
+                { status: 400 }
+            );
+        }
+
         let questionsArray: string[] = [];
         let candidateName = "Candidate";
 
-        try {
-            let cleaned = responseText.trim();
-            cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-
-            const startIdx = cleaned.indexOf("{");
-            const endIdx = cleaned.lastIndexOf("}");
-
-            if (startIdx === -1 || endIdx === -1 || endIdx <= startIdx) {
-                throw new Error("No JSON object found in response");
-            }
-
-            const parsed = JSON.parse(cleaned.substring(startIdx, endIdx + 1));
-
-            if (parsed.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
-                questionsArray = parsed.questions.filter(
-                    (q: unknown) => typeof q === "string" && q.trim().length > 0
-                );
-            } else {
-                throw new Error("Parsed JSON has no valid questions array");
-            }
-
-            if (parsed.name && typeof parsed.name === "string") {
-                candidateName = parsed.name.trim();
-            }
-        } catch (jsonError) {
-            console.error("JSON Parsing Error:", jsonError, "\nFull response:", responseText);
-            return NextResponse.json(
-                { error: "The AI returned an unexpected format. Please try again." },
-                { status: 500 }
+        if (parsed.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+            questionsArray = parsed.questions.filter(
+                (q: unknown) => typeof q === "string" && q.trim().length > 0
             );
+        } else {
+            throw new Error("AI response has no valid questions array");
+        }
+
+        if (parsed.name && typeof parsed.name === "string") {
+            candidateName = parsed.name.trim();
         }
 
         if (questionsArray.length === 0) {

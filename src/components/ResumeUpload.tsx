@@ -59,13 +59,18 @@ export default function ResumeUpload({
 
             if (!res.ok) {
                 const text = await res.text();
-                console.error("Server returned an error:", res.status, text);
                 let errorMsg = "Failed to process resume";
                 try {
                     const parsed = JSON.parse(text);
-                    if (parsed.error) errorMsg = parsed.error;
+                    if (parsed.error) {
+                        errorMsg = parsed.error;
+                        console.error("API Error:", errorMsg);
+                    } else {
+                        console.error("Server returned an error:", res.status, text);
+                    }
                 } catch {
                     errorMsg = `Server Error (${res.status}): ${text.substring(0, 100)}...`;
+                    console.error("Raw Server Error:", text);
                 }
                 throw new Error(errorMsg);
             }
@@ -207,9 +212,25 @@ export default function ResumeUpload({
             </div>
 
             {error && (
-                <div className="mt-8 flex items-center gap-3 bg-red-500/10 border border-red-500/20 p-4 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-                    <p className="text-red-400 text-sm font-medium">{error}</p>
+                <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 z-50 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/30 p-3 sm:p-4 rounded-xl sm:rounded-2xl flex items-start gap-2 sm:gap-3 shadow-2xl shadow-red-900/20 max-w-2xl mx-auto">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-500/20 flex items-center justify-center shrink-0 border border-red-500/20">
+                            <span className="text-red-500 font-bold text-base sm:text-lg">!</span>
+                        </div>
+                        <div className="flex-1 pt-0.5 sm:pt-1">
+                            <h4 className="text-red-400 font-bold text-[10px] sm:text-xs uppercase tracking-widest mb-0.5 sm:mb-1">Upload Issue</h4>
+                            <p className="text-white text-xs sm:text-sm leading-relaxed">{error}</p>
+                        </div>
+                        <button
+                            onClick={() => setError("")}
+                            className="text-slate-500 hover:text-white transition-colors p-1"
+                            aria-label="Close error"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 4.293z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
