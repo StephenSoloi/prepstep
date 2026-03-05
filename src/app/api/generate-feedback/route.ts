@@ -63,6 +63,7 @@ ${transcriptText.substring(0, 28000)}`;
             messages: [{ role: "user", content: prompt }],
             response_format: { type: "json_object" },
             temperature: 0.5,
+            max_tokens: 8192,
         });
 
         const responseText = completion.choices[0]?.message?.content;

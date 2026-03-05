@@ -160,6 +160,7 @@ ${resumeSnippet}`;
             messages: [{ role: "user", content: prompt }],
             response_format: { type: "json_object" },
             temperature: 0.7,
+            max_tokens: 4096,
         });
 
         const responseText = completion.choices[0]?.message?.content;
