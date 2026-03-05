@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
+export const maxDuration = 60; // Allow 60s for cold starts and LLM response
 export const runtime = "nodejs";
 
 /**

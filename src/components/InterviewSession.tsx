@@ -89,7 +89,9 @@ export default function InterviewSession({
             setIsConnecting(true);
             transcriptRef.current = [];
 
-            const firstName = applicantName.trim().split(" ")[0] || applicantName;
+            // Sanitize names to avoid unicode and newline breaking Vapi's strict input validator
+            const sanitizedName = applicantName.replace(/[\n\r\t\\]/g, "").trim();
+            const firstName = sanitizedName.split(" ")[0] || "there";
             const questionsBlock = questions.map((q, i) => `${i + 1}. ${q}`).join("\n");
 
             // Keep resume snippet short — large prompts slow GPT responses and risk Vapi timeouts
@@ -129,10 +131,10 @@ ${questionsBlock}`;
 
             // Pool of varied greetings — one is picked at random each session
             const greetingTemplates = [
-                `Hi ${firstName} !Wonderful to have you here today.I've reviewed your profile and I'm genuinely excited to learn more about you.We're going to have a great conversation — take a deep breath, and let me know when you're set to go!`,
-                `Welcome, ${firstName} !It's great to put a voice to the name. I've had a look through your background and there's a lot to talk about. We'll take it one step at a time, so just relax and we'll get started whenever you're ready.`,
-                `Good day, ${firstName} !Thank you so much for making time for this interview.I've been looking forward to our conversation — your background really caught my attention. Feel free to take a moment to settle in, and then we'll dive right in.`,
-                `Hello ${firstName}, and welcome! I'm delighted you're here.I've gone through your resume and I have some great questions lined up. There's no rush at all — this is a conversation, not a quiz.Whenever you feel comfortable, just let me know and we'll begin.`,
+                `Hi ${firstName}! Wonderful to have you here today. I've reviewed your profile and I'm genuinely excited to learn more about you. We're going to have a great conversation — take a deep breath, and let me know when you're set to go!`,
+                `Welcome, ${firstName}! It's great to put a voice to the name. I've had a look through your background and there's a lot to talk about. We'll take it one step at a time, so just relax and we'll get started whenever you're ready.`,
+                `Good day, ${firstName}! Thank you so much for making time for this interview. I've been looking forward to our conversation — your background really caught my attention. Feel free to take a moment to settle in, and then we'll dive right in.`,
+                `Hello ${firstName}, and welcome! I'm delighted you're here. I've gone through your resume and I have some great questions lined up. There's no rush at all — this is a conversation, not a quiz. Whenever you feel comfortable, just let me know and we'll begin.`,
                 `${firstName}, welcome! It's a pleasure to meet you. I've taken a close look at your background and I'm looking forward to hearing your story firsthand. We'll keep this conversational and relaxed. Just say the word and we'll get things rolling!`,
                 `Hey ${firstName}, so glad you could make it! I've reviewed your details ahead of time, so we can dive straight into the good stuff. I want this to feel like a real, open conversation — so just be yourself. Ready when you are!`,
                 `Welcome aboard, ${firstName}! Thank you for joining us today. I've had a thorough look at your profile and I'm impressed by what I see. We have a few questions lined up that I think you'll find engaging. Take your time, and whenever you're comfortable, we'll get started.`,

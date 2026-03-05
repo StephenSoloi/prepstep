@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
+export const maxDuration = 60; // Allow enough time for LLM generation
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
