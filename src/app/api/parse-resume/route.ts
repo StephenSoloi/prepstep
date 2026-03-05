@@ -133,14 +133,9 @@ export async function POST(req: NextRequest) {
             generationConfig: { responseMimeType: "application/json" }
         });
 
-        const prompt = `You are an expert technical and behavioral interviewer.
+        const prompt = `You are an expert technical and behavioral interviewer preparing to interview a candidate.
         
-First, analyze the provided DOCUMENT TEXT to determine if it contains a resume or CV. 
-CRITICAL INSTRUCTION: The text is extracted directly from a PDF and MAY contain raw PDF formatting, technical metadata, encoding artifacts, or "garbage" characters. DO NOT reject the document just because it contains this metadata. You must ignore the artifacts and actively search the entire text for any resume-like content (a person's name, education, skills, work experience, or summary). If ANY of these elements exist, you MUST treat it as a valid resume.
-
-If and ONLY if the document contains absolutely zero resume content and is clearly something else (e.g., a grocery list, recipe, or 100% gibberish), set "isResume" to false and provide a friendly, concise feedback message in "error" (e.g., "It looks like you've uploaded a [detected type] instead of a resume. Please upload a CV showing your experience or education to continue.").
-
-If you find ANY resume-like content amid the text, set "isResume" to true, set "error" to null, extract the candidate's full name, and generate exactly 5 highly relevant interview questions tailored to their background and the Job Context below.
+Below is the text extracted from the candidate's uploaded document (resume, CV, or professional summary). Do your best to ignore any raw PDF formatting, technical metadata, encoding artifacts, or "garbage" characters. Extract the candidate's full name if possible (otherwise default to "Candidate"), and unconditionally generate exactly 5 highly relevant interview questions tailored to their background and the Job Context below.
 
 Job Context:
 - Company: ${companyName}
@@ -151,15 +146,13 @@ QUESTION REQUIREMENTS:
 1. First question MUST be "Tell us about yourself."
 2. Include at least one question about how they will contribute to ${companyName} as a ${positionApplied}.
 3. Include at least one scenario/behavioral question.
-4. Reference their actual experience from the resume.
+4. Reference their actual experience from the extracted document text if possible. If the text is completely unreadable, base the questions mostly on the Job Context instead.
 5. The 5th question MUST be a general, sensible, and relevant "up-to-date" question related to their field or the job (e.g., about a recent trend, a common tool, or a basic industry standard) that is easy to answer but shows they are current.
 
 OUTPUT FORMAT:
 Return a JSON object with this EXACT structure:
 {
-  "isResume": boolean,
-  "error": "Feedback message if isResume is false, otherwise null",
-  "name": "Full Name",
+  "name": "Full Name or 'Candidate'",
   "questions": ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
 }
 
@@ -173,14 +166,6 @@ ${resumeSnippet}`;
 
         // 4. Parse Gemini JSON response
         const parsed = JSON.parse(responseText.trim());
-
-        // Check if the AI identified this as a non-resume
-        if (parsed.isResume === false) {
-            return NextResponse.json(
-                { error: parsed.error || "The uploaded document does not appear to be a resume. Please upload a valid CV to start the interview." },
-                { status: 400 }
-            );
-        }
 
         let questionsArray: string[] = [];
         let candidateName = "Candidate";
