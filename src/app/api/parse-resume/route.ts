@@ -135,12 +135,12 @@ export async function POST(req: NextRequest) {
 
         const prompt = `You are an expert technical and behavioral interviewer.
         
-First, analyze the provided DOCUMENT TEXT to determine if it is a resume or CV. 
-NOTE: A resume can be very simple, unprofessional, or for a complete beginner—that is okay. As long as it attempts to list a person's name, education, skills, or experience, consider it a resume.
+First, analyze the provided DOCUMENT TEXT to determine if it contains a resume or CV. 
+CRITICAL INSTRUCTION: The text is extracted directly from a PDF and MAY contain raw PDF formatting, technical metadata, encoding artifacts, or "garbage" characters. DO NOT reject the document just because it contains this metadata. You must ignore the artifacts and actively search the entire text for any resume-like content (a person's name, education, skills, work experience, or summary). If ANY of these elements exist, you MUST treat it as a valid resume.
 
-If the document is clearly NOT a resume (e.g., it is a grocery list, a recipe, a book chapter, random sentences, or just gibberish), set "isResume" to false and provide a friendly, concise feedback message in "error" (e.g., "It looks like you've uploaded a [detected type] instead of a resume. Please upload a CV showing your experience or education to continue."). Avoid technical jargon.
+If and ONLY if the document contains absolutely zero resume content and is clearly something else (e.g., a grocery list, recipe, or 100% gibberish), set "isResume" to false and provide a friendly, concise feedback message in "error" (e.g., "It looks like you've uploaded a [detected type] instead of a resume. Please upload a CV showing your experience or education to continue.").
 
-If it IS a resume, set "isResume" to true, set "error" to null, extract the candidate's full name, and generate exactly 5 highly relevant interview questions tailored to their background and the Job Context below.
+If you find ANY resume-like content amid the text, set "isResume" to true, set "error" to null, extract the candidate's full name, and generate exactly 5 highly relevant interview questions tailored to their background and the Job Context below.
 
 Job Context:
 - Company: ${companyName}
