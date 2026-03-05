@@ -30,6 +30,7 @@ export default function Home() {
   const [positionApplied, setPositionApplied] = useState<string>("");
   const [resumeText, setResumeText] = useState<string>("");
   const [companyDescription, setCompanyDescription] = useState<string>("");
+  const [backgroundHighlight, setBackgroundHighlight] = useState<string>("");
   const [isInterviewStarted, setIsInterviewStarted] = useState(false);
   const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
   const [userStatus, setUserStatus] = useState<{ tier: string; credits: number; limit: number } | null>(null);
@@ -107,6 +108,7 @@ export default function Home() {
                 positionApplied={positionApplied}
                 resumeText={resumeText}
                 companyDescription={companyDescription}
+                backgroundHighlight={backgroundHighlight}
                 onEnd={handleInterviewEnd}
               />
             </motion.div>
@@ -328,13 +330,14 @@ export default function Home() {
                         )}
                         <ResumeUpload
                           userStatus={userStatus}
-                          onQuestionsGenerated={(generatedQuestions: string[], name: string, compName: string, posApplied: string, resumeTxt: string, compDesc: string) => {
+                          onQuestionsGenerated={(generatedQuestions: string[], name: string, compName: string, posApplied: string, resumeTxt: string, compDesc: string, bgHighlight: string) => {
                             setQuestions(generatedQuestions);
                             setApplicantName(name);
                             setCompanyName(compName);
                             setPositionApplied(posApplied);
                             setResumeText(resumeTxt);
                             setCompanyDescription(compDesc);
+                            setBackgroundHighlight(bgHighlight);
                             setIsInterviewStarted(true);
                             fetchUserStatus();
                           }}

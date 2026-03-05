@@ -8,7 +8,7 @@ export default function ResumeUpload({
     onQuestionsGenerated,
     userStatus,
 }: {
-    onQuestionsGenerated: (questions: string[], applicantName: string, companyName: string, positionApplied: string, resumeText: string, companyDescription: string) => void;
+    onQuestionsGenerated: (questions: string[], applicantName: string, companyName: string, positionApplied: string, resumeText: string, companyDescription: string, backgroundHighlight: string) => void;
     userStatus: { tier: string; credits: number; limit: number } | null;
 }) {
     const [file, setFile] = useState<File | null>(null);
@@ -86,7 +86,7 @@ export default function ResumeUpload({
 
                 const data = await res.json();
                 if (data.questions && data.questions.length > 0) {
-                    onQuestionsGenerated(data.questions, applicantName, companyName, positionApplied, data.resumeText || "", companyDescription);
+                    onQuestionsGenerated(data.questions, applicantName, companyName, positionApplied, data.resumeText || "", companyDescription, data.backgroundHighlight || "");
                     return; // success — exit the loop and the function
                 } else {
                     throw new Error("No questions could be generated.");

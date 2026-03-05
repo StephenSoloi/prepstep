@@ -149,7 +149,8 @@ QUESTION REQUIREMENTS:
 OUTPUT FORMAT — YOU MUST RETURN ONLY VALID JSON, NO MARKDOWN, NO EXTRA TEXT:
 {
   "name": "Full Name or 'Candidate'",
-  "questions": ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
+  "questions": ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"],
+  "background_highlight": "A short, engaging 1-sentence summary of their most notable past role or skill from their resume (e.g. 'I was particularly impressed by your experience as an Accounts Assistant at Ollin Sacco.')"
 }
 
 DOCUMENT TEXT:
@@ -171,6 +172,7 @@ ${resumeSnippet}`;
 
         let questionsArray: string[] = [];
         let candidateName = "Candidate";
+        let backgroundHighlight = "I've reviewed your profile and experience";
 
         if (parsed.questions && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
             questionsArray = parsed.questions.filter(
@@ -184,6 +186,10 @@ ${resumeSnippet}`;
             candidateName = parsed.name.trim();
         }
 
+        if (parsed.background_highlight && typeof parsed.background_highlight === "string") {
+            backgroundHighlight = parsed.background_highlight.trim();
+        }
+
         if (questionsArray.length === 0) {
             return NextResponse.json(
                 { error: "No questions could be generated from this resume. Please try again." },
@@ -192,7 +198,7 @@ ${resumeSnippet}`;
         }
 
         return NextResponse.json(
-            { questions: questionsArray, name: candidateName, resumeText: extractedText.trim() },
+            { questions: questionsArray, name: candidateName, resumeText: extractedText.trim(), backgroundHighlight },
             { status: 200 }
         );
 
