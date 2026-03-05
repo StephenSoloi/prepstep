@@ -3,68 +3,12 @@ import Groq from "groq-sdk";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require("pdf-parse");
+
 export const maxDuration = 60; // Allow 60s for cold starts and LLM response
 export const runtime = "nodejs";
 
-/**
- * Extracts plain text from a PDF buffer without any external library.
- * Works in every serverless environment — no worker, no native binaries.
- * Handles standard text streams (BT/ET blocks) in spec-compliant PDFs.
- */
-function extractPdfText(buffer: Buffer): string {
-    const raw = buffer.toString("latin1");
-    const texts: string[] = [];
-
-    // Pull every BT … ET (Begin Text / End Text) block
-    const btEtRegex = /BT[\s\S]*?ET/g;
-    let btMatch: RegExpExecArray | null;
-
-    while ((btMatch = btEtRegex.exec(raw)) !== null) {
-        const block = btMatch[0];
-
-        // Match Tj, TJ, and ' operators that carry text
-        const textOpRegex = /\(([^)]*)\)\s*(?:Tj|'|")|(\[([^\]]*)\])\s*TJ/g;
-        let opMatch: RegExpExecArray | null;
-
-        while ((opMatch = textOpRegex.exec(block)) !== null) {
-            if (opMatch[1] !== undefined) {
-                // Single string: (Hello) Tj
-                texts.push(decodePdfString(opMatch[1]));
-            } else if (opMatch[3] !== undefined) {
-                // Array: [(Hello) 20 (World)] TJ
-                const parts = opMatch[3].match(/\(([^)]*)\)/g) || [];
-                for (const p of parts) {
-                    texts.push(decodePdfString(p.slice(1, -1)));
-                }
-            }
-        }
-        texts.push(" "); // space between blocks
-    }
-
-    // Fallback: also grab any raw string literals outside BT/ET (e.g. form fields)
-    if (texts.join("").trim().length < 50) {
-        const fallback = raw.match(/\(([^\x00-\x08\x0e-\x1f)\\]{2,})\)/g) || [];
-        return fallback
-            .map(s => decodePdfString(s.slice(1, -1)))
-            .join(" ")
-            .replace(/\s+/g, " ")
-            .trim();
-    }
-
-    return texts.join("").replace(/\s+/g, " ").trim();
-}
-
-/** Decode common PDF string escape sequences */
-function decodePdfString(s: string): string {
-    return s
-        .replace(/\\n/g, "\n")
-        .replace(/\\r/g, "\r")
-        .replace(/\\t/g, "\t")
-        .replace(/\\\\/g, "\\")
-        .replace(/\\([0-7]{3})/g, (_, oct) =>
-            String.fromCharCode(parseInt(oct, 8))
-        );
-}
 
 export async function POST(req: NextRequest) {
     try {
@@ -105,10 +49,11 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 2. Extract text
+        // 2. Extract text using standard pdf-parse to support compressed PDFs
         let extractedText = "";
         try {
-            extractedText = extractPdfText(buffer);
+            const data = await pdfParse(buffer);
+            extractedText = data.text;
         } catch (parseError) {
             console.error("PDF Parsing Error:", parseError);
             return NextResponse.json(
