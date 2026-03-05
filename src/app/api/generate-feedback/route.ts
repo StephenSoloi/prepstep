@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
@@ -17,16 +17,12 @@ export async function POST(req: NextRequest) {
 
         const transcriptText = transcript.map((t: { role: string; text: string }) => `${t.role.toUpperCase()}: ${t.text}`).join("\n");
 
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash-latest",
-            generationConfig: { responseMimeType: "application/json" }
-        });
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
         const prompt = `You are an expert technical and behavioral interview coach.
 Please carefully review the following interview transcript.
 
-CRITICAL INSTRUCTION: Return a valid JSON object matching this EXACT structure:
+CRITICAL INSTRUCTION: Return a valid JSON object matching this EXACT structure — NO MARKDOWN, NO EXTRA TEXT, ONLY RAW JSON:
 {
     "summary": "A 2-3 sentence overall summary of how the interviewee performed.",
     "metrics": {
@@ -62,12 +58,19 @@ For the qaBreakdown array:
 TRANSCRIPT:
 ${transcriptText.substring(0, 28000)}`;
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        const completion = await groq.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+            temperature: 0.5,
+        });
+
+        const responseText = completion.choices[0]?.message?.content;
 
         if (!responseText) {
             throw new Error("No response from AI.");
         }
+
 
         let feedback;
         try {

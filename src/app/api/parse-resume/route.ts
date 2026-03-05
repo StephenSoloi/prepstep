@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
@@ -127,12 +127,8 @@ export async function POST(req: NextRequest) {
         // Truncate to avoid excessive tokens
         const resumeSnippet = extractedText.substring(0, 12000);
 
-        // 3. Call Gemini
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash-latest",
-            generationConfig: { responseMimeType: "application/json" }
-        });
+        // 3. Call Groq (free-tier, fast, reliable)
+        const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
         const prompt = `You are an expert technical and behavioral interviewer preparing to interview a candidate.
         
@@ -150,8 +146,7 @@ QUESTION REQUIREMENTS:
 4. Reference their actual experience from the extracted document text if possible. If the text is completely unreadable, base the questions mostly on the Job Context instead.
 5. The 5th question MUST be a general, sensible, and relevant "up-to-date" question related to their field or the job (e.g., about a recent trend, a common tool, or a basic industry standard) that is easy to answer but shows they are current.
 
-OUTPUT FORMAT:
-Return a JSON object with this EXACT structure:
+OUTPUT FORMAT — YOU MUST RETURN ONLY VALID JSON, NO MARKDOWN, NO EXTRA TEXT:
 {
   "name": "Full Name or 'Candidate'",
   "questions": ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
@@ -160,9 +155,14 @@ Return a JSON object with this EXACT structure:
 DOCUMENT TEXT:
 ${resumeSnippet}`;
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        const completion = await groq.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+            temperature: 0.7,
+        });
 
+        const responseText = completion.choices[0]?.message?.content;
         if (!responseText) throw new Error("AI returned an empty response.");
 
         // 4. Parse Gemini JSON response
@@ -200,7 +200,7 @@ ${resumeSnippet}`;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const err = error as any;
 
-        if (err.message?.includes("RESOURCE_EXHAUSTED") || err.status === "RESOURCE_EXHAUSTED") {
+        if (err.message?.includes("RESOURCE_EXHAUSTED") || err.status === "RESOURCE_EXHAUSTED" || err.status === 429 || err.statusCode === 429) {
             return NextResponse.json(
                 { error: "AI service is currently busy. Please wait 60 seconds and try again." },
                 { status: 429 }
